@@ -50,7 +50,10 @@ const RESTING = new Quaternion().setFromEuler(
 
 // How the turn act leaves it: in profile, the crown towards the Shopper,
 // just short of side on so the dial still catches the light.
-const PROFILE = new Quaternion().setFromEuler(new Euler(0.06, -1.36, 0));
+const PROFILE = { yaw: -1.36, pitch: 0.06 } as const;
+const IN_PROFILE = new Quaternion().setFromEuler(
+  new Euler(PROFILE.pitch, PROFILE.yaw, 0),
+);
 // The studio is lit for a watch that faces the Shopper, and a watch in
 // profile would show its side to the dark. So the studio turns with it, by
 // this much about the upright axis, until one of its tall strips stands
@@ -218,7 +221,7 @@ function Pose({
   // Draw a frame whenever scroll moves an act.
   useEffect(() => actProgress.onChange(() => invalidate()), []);
 
-  useFrame(({ scene, camera, size }, delta) => {
+  useFrame(({ scene, camera, size, gl }, delta) => {
     if (!stand.current || !watch.current || !keyLight.current) return;
 
     // After a pause the gap since the last frame is long; cap it so the
@@ -245,7 +248,7 @@ function Pose({
     arrived.set(REST.pitch + arrival.pitch, REST.yaw + arrival.yaw, 0);
     watch.current.quaternion
       .setFromEuler(arrived)
-      .slerp(PROFILE, turned)
+      .slerp(IN_PROFILE, turned)
       .slerp(LYING, laid)
       .slerp(RESTING, risen);
 
@@ -263,7 +266,7 @@ function Pose({
     scene.environmentRotation.y = PROFILE_STUDIO_TURN * turned * (1 - laid);
     keyLight.current.intensity = KEY_LIGHT * arrival.light;
 
-    explode(apart, camera, size);
+    explode(apart, camera, gl.domElement);
   });
 
   return (

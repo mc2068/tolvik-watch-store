@@ -31,7 +31,7 @@ export function useActScore(
     /** The share of the act in which its progress runs out; it holds after. */
     over?: number;
   },
-  compose?: (score: gsap.core.Timeline) => void,
+  compose: (score: gsap.core.Timeline) => void,
 ) {
   useGSAP(() => {
     const motion = gsap.matchMedia();
@@ -56,7 +56,7 @@ export function useActScore(
           onUpdate: () => actProgress.set(act, played.progress),
         })
         .set({}, {}, 1);
-      compose?.(score);
+      compose(score);
 
       return () => actProgress.set(act, 0);
     });

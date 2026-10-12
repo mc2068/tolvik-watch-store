@@ -161,12 +161,17 @@ test.describe("the turn and Exploded View acts", () => {
     await expect.poll(() => allShown(1)).toBe(true);
     const watch = (await heroTimepiece(page).boundingBox())!;
     const places = await names.evaluateAll((items) =>
-      items.map((item) => item.getBoundingClientRect().top),
+      items.map((item) => {
+        const { left, top } = item.getBoundingClientRect();
+        return { left, top };
+      }),
     );
-    for (const [index, place] of places.entries()) {
-      expect(place).toBeGreaterThan(watch.y);
-      expect(place).toBeLessThan(watch.y + watch.height);
-      if (index > 0) expect(place).toBeGreaterThan(places[index - 1]);
+    for (const [index, { left, top }] of places.entries()) {
+      expect(left).toBeGreaterThan(watch.x);
+      expect(left).toBeLessThan(watch.x + watch.width);
+      expect(top).toBeGreaterThan(watch.y);
+      expect(top).toBeLessThan(watch.y + watch.height);
+      if (index > 0) expect(top).toBeGreaterThan(places[index - 1].top);
     }
 
     // Closed again at the end of the act, with the price in view.

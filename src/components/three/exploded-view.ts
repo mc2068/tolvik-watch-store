@@ -37,7 +37,7 @@ export function partSeparation(progress: number): Record<Part, number> {
 
   for (const part of PARTS) {
     const wait = STAGGER * (1 - Math.abs(FULL_OFFSET[part]) / REACH);
-    separation[part] = swell(clamp01((t - wait) / (1 - STAGGER)));
+    separation[part] = swell(through([wait, wait + 1 - STAGGER], t));
   }
   return separation;
 }
@@ -70,14 +70,16 @@ export type ExplodedViewPose = {
 // another and never overlap: the watch is lying still while it is apart.
 const LAYS_DOWN = [0.02, 0.24] as const;
 const COMES_APART = [0.24, 0.5] as const;
-// Between the two, every part is out and named, and nothing moves.
-const CLOSES = [0.64, 0.82] as const;
+// Between the two, every part is out and named, and nothing moves. Home
+// reads when the watch closes, to have the act's statement gone by then.
+export const EXPLODED_VIEW_CLOSES = [0.64, 0.82] as const;
 const RISES = [0.82, 0.98] as const;
 
 export function explodedViewPose(progress: number): ExplodedViewPose {
   return {
     laid: swell(through(LAYS_DOWN, progress)),
-    apart: through(COMES_APART, progress) - through(CLOSES, progress),
+    apart: through(COMES_APART, progress) -
+      through(EXPLODED_VIEW_CLOSES, progress),
     risen: swell(through(RISES, progress)),
   };
 }

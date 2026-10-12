@@ -7,7 +7,7 @@
 import { type Part, PARTS } from "@/components/three/hero-model";
 
 export type PartLabel = {
-  /** Where the name goes, in pixels from the left and top of the watch's box. */
+  /** Where the name goes, in pixels from the left and top of the screen. */
   x: number;
   y: number;
   /** How much of the name shows: 0 none, while the watch is closed, 1 all. */
@@ -30,9 +30,9 @@ export const partLabels = {
     return placed ? labels : null;
   },
 
-  /** The scene's side: `place` fills in each label, then Home is told. */
-  place(place: (part: Part, label: PartLabel) => void): void {
-    for (const part of PARTS) place(part, labels[part]);
+  /** The scene's side: `fill` sets each label, then Home is told. */
+  place(fill: (part: Part, label: PartLabel) => void): void {
+    for (const part of PARTS) fill(part, labels[part]);
     placed = true;
     tell();
   },

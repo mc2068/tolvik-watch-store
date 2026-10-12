@@ -5,8 +5,6 @@ import { getImageProps } from "next/image";
 import {
   Component,
   type ReactNode,
-  useEffect,
-  useRef,
   useState,
   useSyncExternalStore,
 } from "react";
@@ -65,19 +63,12 @@ export function HeroStage() {
   );
   const [drawn, setDrawn] = useState(false);
   const [failed, setFailed] = useState(false);
-  const status = useRef<HTMLParagraphElement>(null);
-
-  // The invitation to drag is for the watch as it arrives. Once it turns
-  // away the line steps aside: on a phone it would lie across the open watch.
-  useEffect(
-    () =>
-      actProgress.onChange(() => {
-        status.current?.classList.toggle(
-          "opacity-0",
-          actProgress.get("turn") > 0,
-        );
-      }),
-    [],
+  // Whether the watch has begun to turn away. The act's progress changes on
+  // every frame; this reading of it changes once, as the turn act begins.
+  const turning = useSyncExternalStore(
+    actProgress.onChange,
+    () => actProgress.get("turn") > 0,
+    () => false,
   );
 
   const live = supported === true && motionWelcome === true && !failed;
@@ -111,9 +102,8 @@ export function HeroStage() {
       </div>
 
       <p
-        ref={status}
         role="status"
-        className="pointer-events-none absolute inset-x-0 top-6 flex items-center justify-center gap-3 text-small tracking-open text-platinum-dim transition-opacity duration-(--duration-calm) ease-settle lg:top-auto lg:bottom-10"
+        className="pointer-events-none absolute inset-x-0 top-6 flex items-center justify-center gap-3 text-small tracking-open text-platinum-dim lg:top-auto lg:bottom-10"
       >
         {state === "loading" && (
           <>
@@ -124,7 +114,16 @@ export function HeroStage() {
             Loading the watch
           </>
         )}
-        {state === "ready" && "Drag to look around"}
+        {/* The invitation to drag is for the watch as it arrives. Once it
+            turns away the line steps aside: on a phone it would lie across
+            the open watch. */}
+        {state === "ready" && (
+          <span
+            className={`transition-opacity duration-(--duration-calm) ease-settle ${turning ? "opacity-0" : ""}`}
+          >
+            Drag to look around
+          </span>
+        )}
       </p>
     </div>
   );

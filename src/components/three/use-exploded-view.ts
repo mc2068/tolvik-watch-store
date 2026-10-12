@@ -47,21 +47,17 @@ function findLayers(watch: Object3D): Record<Part, Layer> {
  * Opens the Hero Timepiece into its Exploded View. It returns the function
  * the frame loop calls, once the watch has been posed for the frame, with
  * how far apart the layout is: it moves each part along the watch's axis and
- * tells Home where on the Stage each part's name belongs.
+ * tells Home where on the screen each part's name belongs.
  */
 export function useExplodedView(
   watch: RefObject<Object3D | null>,
-): (
-  apart: number,
-  camera: Camera,
-  stage: { width: number; height: number },
-) => void {
+): (apart: number, camera: Camera, canvas: HTMLCanvasElement) => void {
   const layers = useRef<Record<Part, Layer>>(null);
   const lastApart = useRef(0);
 
   useEffect(() => () => partLabels.clear(), []);
 
-  return (apart, camera, stage) => {
+  return (apart, camera, canvas) => {
     if (!watch.current) return;
 
     // A closed watch that was closed on the last frame too has nothing to
@@ -79,6 +75,7 @@ export function useExplodedView(
     const separation = partSeparation(apart);
     watch.current.updateWorldMatrix(true, true);
     camera.updateMatrixWorld();
+    const stage = canvas.getBoundingClientRect();
     partLabels.place((name, label) => {
       const { part, depth } = found[name];
       part.localToWorld(point.set(0, 0, depth));
@@ -86,8 +83,8 @@ export function useExplodedView(
       // is the Stage's.
       point.x += LABEL_REACH;
       point.project(camera);
-      label.x = ((point.x + 1) / 2) * stage.width;
-      label.y = ((1 - point.y) / 2) * stage.height;
+      label.x = stage.left + ((point.x + 1) / 2) * stage.width;
+      label.y = stage.top + ((1 - point.y) / 2) * stage.height;
       label.shown = through(NAMED, separation[name]);
     });
   };

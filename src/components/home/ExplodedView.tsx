@@ -5,6 +5,7 @@ import { useEffect, useRef, useSyncExternalStore } from "react";
 
 import { ActFrame } from "@/components/home/ActFrame";
 import { useActScore } from "@/components/home/use-act-score";
+import { EXPLODED_VIEW_CLOSES } from "@/components/three/exploded-view";
 import { type Part, PARTS } from "@/components/three/hero-model";
 import { partLabels } from "@/lib/part-labels";
 
@@ -18,6 +19,11 @@ const PART_NAMES: Record<Part, string> = {
   bracelet: "Bracelet",
 };
 
+const PARTS_LABEL = "The seven parts, front to back";
+
+// How long the statement takes to give way, as a share of the act.
+const STATEMENT_FADE = 0.06;
+
 /**
  * The Exploded View act, the peak of Home: the Hero Timepiece lies down and
  * lifts apart, each of its seven parts is named beside it, and it closes
@@ -29,12 +35,11 @@ export function ExplodedView({
 }: {
   /** The Hero Timepiece's price, as it is shown. */
   price: string;
-  /** The address of the Hero Timepiece's own page. */
+  /** Where the call to action leads. */
   href: string;
 }) {
   const act = useRef<HTMLElement>(null);
-  const intro = useRef<HTMLDivElement>(null);
-  const names = useRef(new Map<Part, HTMLLIElement>());
+  const statement = useRef<HTMLDivElement>(null);
 
   // Whether the 3D scene is on the page and saying where each part is. This
   // flips once, when the scene arrives or goes; the places themselves change
@@ -46,68 +51,16 @@ export function ExplodedView({
   );
 
   useActScore("exploded-view", act, { start: "top bottom" }, (score) => {
-    // The statement gives way before the watch closes and the price comes.
-    score.to(intro.current, { opacity: 0, duration: 0.06 }, 0.58);
+    // The statement has gone by the time the watch begins to close.
+    score.to(
+      statement.current,
+      { opacity: 0, duration: STATEMENT_FADE },
+      EXPLODED_VIEW_CLOSES[0] - STATEMENT_FADE,
+    );
   });
 
-  // With a scene, each name follows its part: the scene says where on the
-  // Stage it belongs and how much of it to show, and the name is moved there.
-  useEffect(() => {
-    if (!placed) return;
-
-    const follow = () => {
-      const labels = partLabels.get();
-      if (!labels) return;
-      for (const [part, name] of names.current) {
-        const { x, y, shown } = labels[part];
-        name.style.transform = `translate3d(${Math.round(x)}px, ${Math.round(y)}px, 0)`;
-        name.style.opacity = String(shown);
-      }
-    };
-    follow();
-    return partLabels.onChange(follow);
-  }, [placed]);
-
-  // One list, set two ways. Beside a live watch it is laid over the watch's
-  // box, a name to each part. Without one it is a line of names under the
-  // statement.
-  const parts = (
-    <ol
-      aria-label="The seven parts, front to back"
-      className={
-        placed
-          ? "watch-box pointer-events-none"
-          : "mt-6 flex flex-wrap gap-x-5 gap-y-1 text-small tracking-open text-platinum-dim"
-      }
-    >
-      {PARTS.map((part) => (
-        <li
-          key={part}
-          ref={(name) => {
-            if (name) names.current.set(part, name);
-            else names.current.delete(part);
-          }}
-          className={placed ? "absolute top-0 left-0 opacity-0" : undefined}
-        >
-          {placed ? (
-            // The name starts where the scene points, after a short rule
-            // that leads the eye back to the part. A phone has less room
-            // beside the watch, so a long name takes two lines there.
-            <span className="absolute top-0 left-0 flex w-max -translate-y-1/2 items-center gap-3 text-small leading-tight tracking-open text-platinum">
-              <span
-                aria-hidden="true"
-                className="h-px w-6 shrink-0 bg-platinum-faint"
-              />
-              <span className="max-w-24 lg:max-w-none">{PART_NAMES[part]}</span>
-            </span>
-          ) : (
-            PART_NAMES[part]
-          )}
-        </li>
-      ))}
-    </ol>
-  );
-
+  // One list of names, set two ways: beside a live watch, a name to each
+  // part, or without one, a line of names under the statement.
   return (
     <section
       ref={act}
@@ -115,7 +68,7 @@ export function ExplodedView({
       className="relative h-act-exploded-view motion-reduce:h-auto"
     >
       <ActFrame held>
-        <div ref={intro}>
+        <div ref={statement}>
           <h2
             id="exploded-view-heading"
             className="font-display text-title text-balance"
@@ -126,9 +79,9 @@ export function ExplodedView({
             Each one has a single job. Together they keep the time dry, legible
             and on your wrist.
           </p>
-          {!placed && parts}
+          {!placed && <NamesInALine />}
         </div>
-        {placed && parts}
+        {placed && <NamesBesideTheParts />}
       </ActFrame>
 
       {/* The offer is the last screen of the act and scrolls up into place
@@ -140,7 +93,7 @@ export function ExplodedView({
           <p className="mt-4 max-w-measure text-lead text-platinum-dim md:mt-6">
             In steel on a steel bracelet, with a deep blue dial.
           </p>
-          {/* The Timepiece's page is not built yet, so Next must not fetch
+          {/* The page this leads to is not built yet, so Next must not fetch
               it ahead of the click; remove `prefetch={false}` once it is. */}
           <Link
             href={href}
@@ -152,5 +105,78 @@ export function ExplodedView({
         </ActFrame>
       </div>
     </section>
+  );
+}
+
+/** The names with no scene to place them: a line under the statement. */
+function NamesInALine() {
+  return (
+    <ol
+      aria-label={PARTS_LABEL}
+      className="mt-6 flex flex-wrap gap-x-5 gap-y-1 text-small tracking-open text-platinum-dim"
+    >
+      {PARTS.map((part) => (
+        <li key={part}>{PART_NAMES[part]}</li>
+      ))}
+    </ol>
+  );
+}
+
+/**
+ * The names beside a live watch. The list is laid over the watch's box and
+ * each name follows its part: the scene says where on the screen it belongs
+ * and how much of it to show, and the name is moved there.
+ */
+function NamesBesideTheParts() {
+  const list = useRef<HTMLOListElement>(null);
+  const items = useRef(new Map<Part, HTMLLIElement>());
+
+  useEffect(() => {
+    const follow = () => {
+      const labels = partLabels.get();
+      if (!labels || !list.current) return;
+      // The scene speaks in the screen's pixels and the names are moved in
+      // the list's own, so the list is measured each time. The two need not
+      // line up: the act's frame is still on its way up to the Stage, or
+      // already leaving it, at either end of a brisk scroll.
+      const { left, top } = list.current.getBoundingClientRect();
+      for (const [part, item] of items.current) {
+        const { x, y, shown } = labels[part];
+        item.style.transform = `translate3d(${Math.round(x - left)}px, ${Math.round(y - top)}px, 0)`;
+        item.style.opacity = String(shown);
+      }
+    };
+    follow();
+    return partLabels.onChange(follow);
+  }, []);
+
+  return (
+    <ol
+      ref={list}
+      aria-label={PARTS_LABEL}
+      className="watch-box pointer-events-none"
+    >
+      {PARTS.map((part) => (
+        <li
+          key={part}
+          ref={(item) => {
+            if (item) items.current.set(part, item);
+            else items.current.delete(part);
+          }}
+          className="absolute top-0 left-0 opacity-0"
+        >
+          {/* The name starts where the scene points, after a short rule
+              that leads the eye back to the part. A phone has less room
+              beside the watch, so a long name takes two lines there. */}
+          <span className="absolute top-0 left-0 flex w-max -translate-y-1/2 items-center gap-3 text-small leading-tight tracking-open text-platinum">
+            <span
+              aria-hidden="true"
+              className="h-px w-6 shrink-0 bg-platinum-faint"
+            />
+            <span className="max-w-24 lg:max-w-none">{PART_NAMES[part]}</span>
+          </span>
+        </li>
+      ))}
+    </ol>
   );
 }
