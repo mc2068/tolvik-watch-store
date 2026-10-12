@@ -38,6 +38,18 @@ _Avoid_: Category, catalogue, range
 
 ### Experience
 
+**Act**:
+One of the three scroll-driven chapters of Home in which the Hero Timepiece moves: arrival, turn, Exploded View.
+_Avoid_: Scene, chapter, slide
+
+**Stage**:
+The area of Home, held under the navigation, where the Hero Timepiece stays in view while the Acts scroll past.
+_Avoid_: Canvas, viewport, hero section
+
+**Still**:
+A fixed image of a Timepiece rendered from its 3D model, shown wherever the Timepiece is not in real-time 3D.
+_Avoid_: Screenshot, poster, placeholder
+
 **Exploded View**:
 The moment where the Hero Timepiece separates into its component parts so the Shopper can see how it is built.
 _Avoid_: Breakdown, anatomy, disassembly
