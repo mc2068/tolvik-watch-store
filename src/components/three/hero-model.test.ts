@@ -1,5 +1,6 @@
 import { readdirSync, statSync } from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { type Document, type Node, NodeIO } from "@gltf-transform/core";
 import {
@@ -14,6 +15,7 @@ import {
   HAND_CAP,
   HANDS,
   HERO_MODEL,
+  HERO_MODEL_BUDGET,
   PARTS,
 } from "@/components/three/hero-model";
 import { creditLine, heroModelCredit } from "@/lib/credits";
@@ -21,22 +23,19 @@ import { creditLine, heroModelCredit } from "@/lib/credits";
 // These tests read the two committed files that `npm run models` writes, so
 // a regenerated model that breaks the names the scene relies on fails here.
 
-const publicDir = path.resolve("public");
+const publicDir = fileURLToPath(new URL("../../../public", import.meta.url));
 const fileOf = (url: string) => path.join(publicDir, url);
 
-const KB = 1024;
-const budget = { main: 1500 * KB, phone: 700 * KB };
-
-const variants = ["main", "phone"] as const;
-const models = {} as Record<(typeof variants)[number], Document>;
+const versions = ["main", "phone"] as const;
+const models = {} as Record<(typeof versions)[number], Document>;
 
 beforeAll(async () => {
   await MeshoptDecoder.ready;
   const io = new NodeIO()
     .registerExtensions([EXTMeshoptCompression, KHRMeshQuantization])
     .registerDependencies({ "meshopt.decoder": MeshoptDecoder });
-  for (const variant of variants) {
-    models[variant] = await io.read(fileOf(HERO_MODEL[variant]));
+  for (const version of versions) {
+    models[version] = await io.read(fileOf(HERO_MODEL[version]));
   }
 });
 
@@ -59,9 +58,9 @@ function triangles(model: Document): number {
   return count;
 }
 
-describe.each(variants)("the %s Hero Timepiece model", (variant) => {
+describe.each(versions)("the %s Hero Timepiece model", (version) => {
   test("is made of the seven named parts and nothing else", () => {
-    const scene = models[variant].getRoot().getDefaultScene()!;
+    const scene = models[version].getRoot().getDefaultScene()!;
     const [root, ...others] = scene.listChildren();
     expect(others).toHaveLength(0);
     expect(root.listChildren().map((part) => part.getName())).toEqual([
@@ -70,7 +69,7 @@ describe.each(variants)("the %s Hero Timepiece model", (variant) => {
   });
 
   test("keeps the hands as hour, minute and second, with their cap", () => {
-    const hands = nodeNamed(models[variant], "hands");
+    const hands = nodeNamed(models[version], "hands");
     expect(hands.listChildren().map((hand) => hand.getName())).toEqual([
       ...HANDS,
       HAND_CAP,
@@ -78,9 +77,9 @@ describe.each(variants)("the %s Hero Timepiece model", (variant) => {
   });
 
   test("has every hand pointing at twelve from the pivot", () => {
-    const cap = getBounds(nodeNamed(models[variant], HAND_CAP));
+    const cap = getBounds(nodeNamed(models[version], HAND_CAP));
     for (const name of HANDS) {
-      const { min, max } = getBounds(nodeNamed(models[variant], name));
+      const { min, max } = getBounds(nodeNamed(models[version], name));
       const length = max[1];
       expect(length, `${name} reaches up`).toBeGreaterThan(0.3);
       // The hand starts under the cap and is far longer than it is wide.
@@ -95,7 +94,7 @@ describe.each(variants)("the %s Hero Timepiece model", (variant) => {
 
   test("orders the hands by length and stacks them clear of each other", () => {
     const [hour, minute, second] = HANDS.map((name) =>
-      getBounds(nodeNamed(models[variant], name)),
+      getBounds(nodeNamed(models[version], name)),
     );
     expect(hour.max[1]).toBeLessThan(minute.max[1] * 0.8);
     // Hour lowest, then minute, then second, so they can cross without
@@ -106,7 +105,7 @@ describe.each(variants)("the %s Hero Timepiece model", (variant) => {
 
   test("faces the Shopper, with the crown at three o'clock", () => {
     const centre = (name: string) => {
-      const { min, max } = getBounds(nodeNamed(models[variant], name));
+      const { min, max } = getBounds(nodeNamed(models[version], name));
       return min.map((low, axis) => (low + max[axis]) / 2);
     };
     // Front to back along +Z: crystal, dial, dial base, then the bracelet.
@@ -120,7 +119,7 @@ describe.each(variants)("the %s Hero Timepiece model", (variant) => {
   });
 
   test("leaves every node untransformed, so a part moves from rest", () => {
-    for (const node of models[variant].getRoot().listNodes()) {
+    for (const node of models[version].getRoot().listNodes()) {
       expect(node.getTranslation(), node.getName()).toEqual([0, 0, 0]);
       expect(node.getRotation(), node.getName()).toEqual([0, 0, 0, 1]);
       expect(node.getScale(), node.getName()).toEqual([1, 1, 1]);
@@ -128,17 +127,17 @@ describe.each(variants)("the %s Hero Timepiece model", (variant) => {
   });
 
   test("carries no source material, so each part is finished in code", () => {
-    expect(models[variant].getRoot().listMaterials()).toHaveLength(0);
+    expect(models[version].getRoot().listMaterials()).toHaveLength(0);
   });
 
   test("carries the artist's credit line", () => {
-    const { copyright } = models[variant].getRoot().getAsset();
+    const { copyright } = models[version].getRoot().getAsset();
     expect(copyright).toBe(creditLine(heroModelCredit));
   });
 
   test("fits its download budget", () => {
-    const { size } = statSync(fileOf(HERO_MODEL[variant]));
-    expect(size).toBeLessThan(budget[variant]);
+    const { size } = statSync(fileOf(HERO_MODEL[version]));
+    expect(size).toBeLessThan(HERO_MODEL_BUDGET[version]);
   });
 });
 

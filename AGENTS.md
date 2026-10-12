@@ -80,7 +80,7 @@ Do not invent new ones. For React Three Fiber, drei, Zustand and Next.js, read t
 - Cart (`src/store/cart.ts`): the Shopper's cart, kept in their browser.
 - 3D (`src/components/three`): the canvas, the Hero Timepiece, its parts, materials and clock.
 - Sections (`src/components/home`, `shop`, `ui`): one component per act, section or widget.
-- Model tooling (`scripts/`): offline scripts that turn `models-raw/` into `public/models/` and render catalogue stills. `npm run models` prepares the Hero Timepiece and its phone variant; `src/components/three/hero-model.ts` lists the part names and what scene code may rely on.
+- Model tooling (`scripts/`): offline scripts that turn `models-raw/` into `public/models/` and render catalogue stills. `npm run models` prepares the Hero Timepiece and its lighter phone model; `src/components/three/hero-model.ts` sets the part names and says what scene code may rely on.
 
 Pages and components never import `src/data` directly; they call the Catalogue, whose functions are async so a real backend can replace the sample data later (section 7). Everything under `components/three` is client-only and loaded dynamically, with a still image in its place until it is ready. Scripts never run in the browser or at build time on Vercel; their outputs are committed.
 
@@ -126,7 +126,7 @@ All specifications and brand history are invented; keep them plausible and modes
 
 # 9. How the Hero Timepiece must behave
 
-- The model is addressed by **part names** set once in `scripts/prepare-models.mjs`: crystal, hands, dial, dial base, case, crown and pushers, bracelet. Scene code never refers to the source file's mesh names.
+- The model is addressed by **part names** set once in `src/components/three/hero-model.ts`, which `scripts/prepare-models.mjs` imports: crystal, hands, dial, dial base, case, crown and pushers, bracelet. Scene code never refers to the source file's mesh names.
 - Scroll drives everything through one progress value per act. ScrollTrigger writes it to a ref-based store and the frame loop reads it. Never put scroll progress in React state: a render per frame is what makes a phone stutter.
 - Every act is fully reversible. Scrolling back up plays it backwards with no jump.
 - In the Exploded View the seven layers separate along the watch's axis, each is named in real text beside it, and they close again as the price appears.
@@ -168,7 +168,7 @@ You cannot infer these from the code, so keep them in mind.
 
 - `npm run lint`: ESLint over the app.
 - `npm run typecheck`: generates Next's route types, then runs `tsc --noEmit`.
-- `npm test`: the unit runner (Vitest) for pure functions, `src/**/*.test.ts`.
+- `npm test`: the unit runner (Vitest) for pure functions, `src/**/*.test.ts`. It also checks the two committed model files against the part names, so run it after `npm run models`.
 - `npm run test:e2e`: the browser suite (Playwright) in `e2e/`. It builds the site and drives the production build on port 3100. On a fresh clone, run `npx playwright install chromium` once first.
 - `npm run build`: the production build on its own. The browser suite already runs it, so a green suite means the build passed.
 

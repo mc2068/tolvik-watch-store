@@ -1,6 +1,7 @@
 // The 3D models Tolvik ships are CC-BY-4.0, which requires crediting the
-// artist wherever the work is shown. The credits page and the README read
-// their credit lines from here.
+// artist wherever the work is shown. Each credit is recorded here for the
+// credits page and the README, and `npm run models` checks it against the
+// licence file in the download before writing it into the model.
 
 export type ModelCredit = {
   title: string;

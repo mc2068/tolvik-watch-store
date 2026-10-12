@@ -1,13 +1,14 @@
 // Turns the source download in models-raw/ into the Hero Timepiece model the
-// site ships: public/models/hero-timepiece.glb and a lighter phone variant.
+// site ships: public/models/hero-timepiece.glb and a lighter one for phones.
 //
 //   npm run models
 //
 // It runs offline, on a developer's machine. Its outputs are committed, so
 // neither the browser nor the Vercel build ever runs it.
 //
-// What scene code may rely on in the prepared model is written down in
-// src/components/three/hero-model.ts, and checked by the test beside it.
+// The part names, the file locations and what scene code may rely on in the
+// prepared model live in src/components/three/hero-model.ts, which this
+// script imports. Node 22.18 or later runs that TypeScript file as it is.
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
@@ -28,40 +29,33 @@ import {
   MeshoptSimplifier,
 } from "meshoptimizer";
 
+import {
+  HAND_CAP,
+  HANDS,
+  HERO_MODEL,
+  HERO_MODEL_BUDGET,
+  PARTS,
+} from "../src/components/three/hero-model.ts";
+import { creditLine, heroModelCredit } from "../src/lib/credits.ts";
+
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
-// The only download this script opens. models-raw/ also holds a "Luxury
-// Wristwatch" that copies a real brand's watch; it must never be listed here.
+// The only download this script opens, and the credit its licence asks for.
+// models-raw/ also holds a "Luxury Wristwatch" that copies a real brand's
+// watch; it must never be named here.
 const SOURCE = {
   archive: "models-raw/stainless_steel_wristwatch_analog_watch.zip",
-  title: "Stainless Steel Wristwatch Analog Watch",
-  page: "https://sketchfab.com/3d-models/stainless-steel-wristwatch-analog-watch-029a0b692d474e55ac29292fc30fb153",
+  credit: heroModelCredit,
 };
 
-const OUTPUT = {
-  main: "public/models/hero-timepiece.glb",
-  phone: "public/models/hero-timepiece-phone.glb",
-};
+const outputFile = (version) => `public${HERO_MODEL[version]}`;
 
-const KB = 1024;
-const BUDGET = { main: 1500 * KB, phone: 700 * KB };
-
-// The phone variant keeps this share of each part's triangles, as long as
-// the surface moves by no more than PHONE_ERROR of the part's size.
+// The phone model aims for this share of each part's triangles, but never
+// moves a surface by more than PHONE_ERROR of the part's size. Parts made
+// of small hard-edged shells, the bracelet and the dial's markers, have
+// almost nothing to give within that limit and stay close to full detail.
 const PHONE_RATIO = 0.4;
 const PHONE_ERROR = 0.002;
-
-// The seven parts, front to back along the watch's axis. Keep in step with
-// src/components/three/hero-model.ts; its test fails if the two drift apart.
-const PARTS = [
-  "crystal",
-  "hands",
-  "dial",
-  "dial-base",
-  "case",
-  "crown-and-pushers",
-  "bracelet",
-];
 
 // Every mesh in the source file, by the name its author gave it, and the one
 // part it belongs to. The author's names are loose: "WatchDial" is the bezel
@@ -83,8 +77,6 @@ const SOURCE_MESHES = {
 // The two source meshes behind the hands part, which is rebuilt, not merged.
 const FUSED_HANDS = "pPlane8_lambert3_0";
 const HAND_POST = "Watch_Crown2_lambert3_0";
-const HAND_NAMES = ["hour-hand", "minute-hand", "second-hand"];
-const HAND_CAP = "hand-cap";
 
 // Positions are snapped to this grid (about 2 microns on a 40 mm watch) and
 // texture coordinates to a coarser one. Rounded numbers compress far better,
@@ -184,52 +176,53 @@ function merged(geometries) {
   return all;
 }
 
-/** Splits a geometry into the pieces that share no vertex position. */
+/** Splits a geometry into its shells: the surfaces that touch nowhere. */
 function separated(geometry) {
   const { position, normal, uv, index } = geometry;
   const vertexCount = position.length / 3;
 
   // Vertices at the same position count as one, whatever their normals.
-  const group = new Uint32Array(vertexCount);
+  // `parent` links each vertex towards the first vertex of its shell.
+  const parent = new Uint32Array(vertexCount);
   const firstAt = new Map();
   for (let v = 0; v < vertexCount; v++) {
     const key = `${position[v * 3]},${position[v * 3 + 1]},${position[v * 3 + 2]}`;
     if (!firstAt.has(key)) firstAt.set(key, v);
-    group[v] = firstAt.get(key);
+    parent[v] = firstAt.get(key);
   }
   const rootOf = (v) => {
-    while (group[v] !== v) v = group[v] = group[group[v]];
+    while (parent[v] !== v) v = parent[v] = parent[parent[v]];
     return v;
   };
   for (let t = 0; t < index.length; t += 3) {
     const root = rootOf(index[t]);
-    group[rootOf(index[t + 1])] = root;
-    group[rootOf(index[t + 2])] = root;
+    parent[rootOf(index[t + 1])] = root;
+    parent[rootOf(index[t + 2])] = root;
   }
 
-  const pieces = new Map();
+  const shells = new Map();
   for (let t = 0; t < index.length; t += 3) {
     const root = rootOf(index[t]);
-    if (!pieces.has(root)) pieces.set(root, []);
-    pieces.get(root).push(index[t], index[t + 1], index[t + 2]);
+    if (!shells.has(root)) shells.set(root, []);
+    shells.get(root).push(index[t], index[t + 1], index[t + 2]);
   }
-  return [...pieces.values()].map((corners) => {
+  return [...shells.values()].map((corners) => {
     const renumbered = new Map();
     for (const v of corners) {
       if (!renumbered.has(v)) renumbered.set(v, renumbered.size);
     }
-    const piece = {
+    const shell = {
       position: new Float32Array(renumbered.size * 3),
       normal: new Float32Array(renumbered.size * 3),
       uv: new Float32Array(renumbered.size * 2),
       index: Uint32Array.from(corners, (v) => renumbered.get(v)),
     };
     for (const [from, to] of renumbered) {
-      piece.position.set(position.subarray(from * 3, from * 3 + 3), to * 3);
-      piece.normal.set(normal.subarray(from * 3, from * 3 + 3), to * 3);
-      piece.uv.set(uv.subarray(from * 2, from * 2 + 2), to * 2);
+      shell.position.set(position.subarray(from * 3, from * 3 + 3), to * 3);
+      shell.normal.set(normal.subarray(from * 3, from * 3 + 3), to * 3);
+      shell.uv.set(uv.subarray(from * 2, from * 2 + 2), to * 2);
     }
-    return piece;
+    return shell;
   });
 }
 
@@ -247,7 +240,7 @@ function bounds(geometry) {
 // The hands
 // ---------------------------------------------------------------------------
 
-/** How far a piece reaches from the axis, seen from the front. */
+/** How far a shell reaches from the axis, seen from the front. */
 function reach({ position }) {
   let far = 0;
   for (let i = 0; i < position.length; i += 3) {
@@ -289,14 +282,14 @@ function width(hand) {
  * they can cross without passing through one another.
  */
 function splitHands(fused, post) {
-  const pieces = separated(fused).sort((a, b) => reach(a) - reach(b));
-  if (pieces.length !== 4 || reach(pieces[0]) > reach(pieces[1]) / 2) {
+  const shells = separated(fused).sort((a, b) => reach(a) - reach(b));
+  if (shells.length !== 4 || reach(shells[0]) > reach(shells[1]) / 2) {
     throw new Error(
-      `The hands did not split cleanly: expected a cap and three hands, found ${pieces.length} pieces.`,
+      `The hands did not split cleanly: expected a cap and three hands, found ${shells.length} shells.`,
     );
   }
-  const [cap, hour, ...longer] = pieces.map((piece, i) =>
-    i === 0 ? piece : pointedAtTwelve(piece),
+  const [cap, hour, ...longer] = shells.map((shell, i) =>
+    i === 0 ? shell : pointedAtTwelve(shell),
   );
   // The minute and second hands are the same length; the second is the needle.
   const [second, minute] = longer.sort((a, b) => width(a) - width(b));
@@ -322,10 +315,11 @@ function splitHands(fused, post) {
     ([x, y, z]) => [x, y, z / stretch],
   );
 
+  const [hourHand, minuteHand, secondHand] = HANDS;
   return {
-    "hour-hand": hour,
-    "minute-hand": minuteUp,
-    "second-hand": secondUp,
+    [hourHand]: hour,
+    [minuteHand]: minuteUp,
+    [secondHand]: secondUp,
     [HAND_CAP]: merged([post, tallCap]),
   };
 }
@@ -335,31 +329,31 @@ function splitHands(fused, post) {
 // ---------------------------------------------------------------------------
 
 async function readSource(io) {
-  const archive = path.join(repo, SOURCE.archive);
-  if (!existsSync(archive)) {
+  const { archive, credit } = SOURCE;
+  if (!existsSync(path.join(repo, archive))) {
     throw new Error(
-      `${SOURCE.archive} is missing. Download "${SOURCE.title}" in glTF format from ${SOURCE.page} and save the zip there.`,
+      `${archive} is missing. Download "${credit.title}" in glTF format from ${credit.source} and save the zip there.`,
     );
   }
-  const files = unzipSync(readFileSync(archive));
+  const files = unzipSync(readFileSync(path.join(repo, archive)));
   const text = (name) => new TextDecoder().decode(files[name]);
 
+  // The licence file names the model and spells out the credit it requires.
+  // Both must match what src/lib/credits.ts records for the credits page.
   const licence = text("license.txt");
-  const credit = licence
-    .split(/\r?\n/)
-    .find((line) => line.startsWith("This work is based on"));
-  if (!licence.includes(`title:\t${SOURCE.title}`) || !credit) {
-    throw new Error(`${SOURCE.archive} is not "${SOURCE.title}"`);
+  if (!licence.includes(`title:\t${credit.title}`)) {
+    throw new Error(`${archive} is not "${credit.title}"`);
   }
-  if (!licence.includes("CC-BY-4.0")) {
-    throw new Error(`${SOURCE.archive} is not licensed CC-BY-4.0`);
+  if (!licence.includes(creditLine(credit))) {
+    throw new Error(
+      `The credit line in ${archive} differs from the one in src/lib/credits.ts`,
+    );
   }
 
-  const source = await io.readJSON({
+  return io.readJSON({
     json: JSON.parse(text("scene.gltf")),
     resources: { "scene.bin": files["scene.bin"] },
   });
-  return { source, credit: credit.trim() };
 }
 
 /** Reads every source mesh, insisting each one belongs to exactly one part. */
@@ -424,11 +418,11 @@ function snappedToGrid(geometry) {
 }
 
 /** Builds the prepared model: a root, the seven parts, the hands inside. */
-function buildModel(parts, hands, credit, sourceAsset) {
+function buildModel(parts, hands, sourceAsset) {
   const model = new Document().setLogger(new Logger(Logger.Verbosity.WARN));
   const buffer = model.createBuffer();
   const asset = model.getRoot().getAsset();
-  asset.copyright = credit;
+  asset.copyright = creditLine(SOURCE.credit);
   asset.extras = { ...sourceAsset.extras };
 
   const meshNode = (name, geometry) => {
@@ -455,7 +449,7 @@ function buildModel(parts, hands, credit, sourceAsset) {
       continue;
     }
     const group = model.createNode("hands");
-    for (const name of [...HAND_NAMES, HAND_CAP]) {
+    for (const name of [...HANDS, HAND_CAP]) {
       group.addChild(meshNode(name, hands[name]));
     }
     root.addChild(group);
@@ -509,7 +503,7 @@ async function main() {
       "meshopt.decoder": MeshoptDecoder,
     });
 
-  const { source, credit } = await readSource(io);
+  const source = await readSource(io);
   const meshes = readMeshes(source);
   const toStandardFrame = standardFrame(meshes);
 
@@ -527,11 +521,11 @@ async function main() {
   }
 
   const report = {};
-  for (const variant of ["main", "phone"]) {
-    const model = buildModel(parts, hands, credit, source.getRoot().getAsset());
+  for (const version of ["main", "phone"]) {
+    const model = buildModel(parts, hands, source.getRoot().getAsset());
     await model.transform(
       weld(),
-      ...(variant === "phone"
+      ...(version === "phone"
         ? [
             simplify({
               simplifier: MeshoptSimplifier,
@@ -544,27 +538,32 @@ async function main() {
     );
     packNormals(model);
     model.createExtension(EXTMeshoptCompression).setRequired(true);
-
-    const file = await io.writeBinary(model);
-    mkdirSync(path.dirname(path.join(repo, OUTPUT[variant])), {
-      recursive: true,
-    });
-    writeFileSync(path.join(repo, OUTPUT[variant]), file);
-    report[variant] = { bytes: file.byteLength, parts: trianglesByPart(model) };
+    report[version] = {
+      file: await io.writeBinary(model),
+      parts: trianglesByPart(model),
+    };
   }
 
-  printReport(meshes, report, credit);
+  printReport(meshes, report);
 
+  // Nothing is written unless both models fit, so a run that goes over
+  // budget leaves the committed files as they were.
   const over = Object.keys(report).filter(
-    (variant) => report[variant].bytes > BUDGET[variant],
+    (version) => report[version].file.byteLength > HERO_MODEL_BUDGET[version],
   );
   if (over.length > 0) {
-    throw new Error(`Over the download budget: ${over.join(", ")}`);
+    throw new Error(`Over the download budget, nothing written: ${over}`);
   }
+  for (const version of Object.keys(report)) {
+    const file = path.join(repo, outputFile(version));
+    mkdirSync(path.dirname(file), { recursive: true });
+    writeFileSync(file, report[version].file);
+  }
+  console.log(`Wrote ${outputFile("main")}\n      ${outputFile("phone")}\n`);
 }
 
-function printReport(meshes, report, credit) {
-  const kb = (bytes) => `${(bytes / KB).toFixed(0)} KB`;
+function printReport(meshes, report) {
+  const kb = (bytes) => `${Math.round(bytes / 1024)} KB`;
   const total = (parts) => Object.values(parts).reduce((a, b) => a + b, 0);
   const row = (cells) =>
     cells
@@ -572,8 +571,9 @@ function printReport(meshes, report, credit) {
         i === 0 ? String(cell).padEnd(28) : String(cell).padStart(10),
       )
       .join("");
+  const { main, phone } = report;
 
-  console.log(`\nSource: ${SOURCE.title}\n        ${SOURCE.archive}\n`);
+  console.log(`\nSource: ${SOURCE.credit.title}\n        ${SOURCE.archive}\n`);
   console.log(row(["Source mesh", "Triangles", "  Part"]));
   for (const [name, geometry] of meshes) {
     console.log(
@@ -583,18 +583,18 @@ function printReport(meshes, report, credit) {
 
   console.log(`\n${row(["Part", "Main", "Phone"])}`);
   for (const part of PARTS) {
-    console.log(row([part, report.main.parts[part], report.phone.parts[part]]));
+    console.log(row([part, main.parts[part], phone.parts[part]]));
   }
+  console.log(row(["Triangles", total(main.parts), total(phone.parts)]));
   console.log(
-    row(["Triangles", total(report.main.parts), total(report.phone.parts)]),
+    row(["File size", kb(main.file.byteLength), kb(phone.file.byteLength)]),
   );
-  console.log(row(["File size", kb(report.main.bytes), kb(report.phone.bytes)]));
-  console.log(row(["Budget", kb(BUDGET.main), kb(BUDGET.phone)]));
-  console.log(`\nWrote ${OUTPUT.main}\n      ${OUTPUT.phone}`);
-  console.log(`\nCredit line, for the credits page and the README:\n${credit}\n`);
+  console.log(
+    row(["Budget", kb(HERO_MODEL_BUDGET.main), kb(HERO_MODEL_BUDGET.phone)]),
+  );
+  console.log(
+    `\nCredit line, for the credits page and the README:\n${creditLine(SOURCE.credit)}\n`,
+  );
 }
 
-main().catch((error) => {
-  console.error(error.message);
-  process.exitCode = 1;
-});
+await main();
