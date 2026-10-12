@@ -5,11 +5,14 @@ import { getImageProps } from "next/image";
 import {
   Component,
   type ReactNode,
+  useEffect,
+  useRef,
   useState,
   useSyncExternalStore,
 } from "react";
 
 import { HERO_STILL } from "@/components/three/hero-model";
+import { actProgress } from "@/lib/act-progress";
 
 // `next/dynamic` with `ssr: false` keeps the 3D code out of the server's HTML
 // and out of the page's first download: the browser fetches it only after
@@ -62,12 +65,26 @@ export function HeroStage() {
   );
   const [drawn, setDrawn] = useState(false);
   const [failed, setFailed] = useState(false);
+  const status = useRef<HTMLParagraphElement>(null);
+
+  // The invitation to drag is for the watch as it arrives. Once it turns
+  // away the line steps aside: on a phone it would lie across the open watch.
+  useEffect(
+    () =>
+      actProgress.onChange(() => {
+        status.current?.classList.toggle(
+          "opacity-0",
+          actProgress.get("turn") > 0,
+        );
+      }),
+    [],
+  );
 
   const live = supported === true && motionWelcome === true && !failed;
   const state = !live ? "still" : drawn ? "ready" : "loading";
 
   return (
-    <div className="absolute inset-x-0 top-0 h-3/5 lg:inset-y-0 lg:left-2/5 lg:h-auto">
+    <div className="watch-box">
       <div
         role="img"
         aria-label="The Tolvik watch in steel, with a deep blue dial"
@@ -94,8 +111,9 @@ export function HeroStage() {
       </div>
 
       <p
+        ref={status}
         role="status"
-        className="pointer-events-none absolute inset-x-0 top-6 flex items-center justify-center gap-3 text-small tracking-open text-platinum-dim lg:top-auto lg:bottom-10"
+        className="pointer-events-none absolute inset-x-0 top-6 flex items-center justify-center gap-3 text-small tracking-open text-platinum-dim transition-opacity duration-(--duration-calm) ease-settle lg:top-auto lg:bottom-10"
       >
         {state === "loading" && (
           <>

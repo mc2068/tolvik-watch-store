@@ -60,6 +60,9 @@
      stutter. Each act's length is a multiple of the stage. */
   --spacing-stage: calc(100lvh - var(--spacing-header));
   --spacing-act-arrival: calc(var(--spacing-stage) * 2);
+  --spacing-act-turn: calc(var(--spacing-stage) * 1.75);
+  /* The peak of Home: it has more room than the other two acts together. */
+  --spacing-act-exploded-view: calc(var(--spacing-stage) * 4.5);
   /* The first screen as a phone shows it with its toolbars out, in svh, so
      copy set at its foot is in view on arrival and never shifts. */
   --spacing-first-screen: calc(100svh - var(--spacing-header));
@@ -148,6 +151,22 @@
   margin-inline: auto;
   max-width: var(--container-page);
   padding-inline: var(--spacing-gutter);
+}
+
+/* The watch's box on the Stage: the upper three fifths on a phone, the right
+   three fifths on a laptop, where the copy stands to its left. The Exploded
+   View lays the parts' names over the same box. */
+@utility watch-box {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 60%;
+
+  @variant lg {
+    inset-block: 0;
+    left: 40%;
+    height: auto;
+  }
 }
 
 /* A link inside a sentence: underlined in the accent so it reads as a link
