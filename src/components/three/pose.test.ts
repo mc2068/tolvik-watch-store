@@ -10,7 +10,6 @@ import { MeshoptDecoder } from "meshoptimizer";
 import { Quaternion, Vector3 } from "three";
 import { beforeAll, describe, expect, test } from "vitest";
 
-import { partOffsets } from "@/components/three/exploded-view";
 import { CAMERA_DISTANCE, containFov, LENS } from "@/components/three/framing";
 import { HERO_MODEL, type Part, PARTS } from "@/components/three/hero-model";
 import { type Pose, poseAt } from "@/components/three/pose";
@@ -18,7 +17,7 @@ import { type Pose, poseAt } from "@/components/three/pose";
 // The Stage's shape, width over height, on a laptop.
 const LAPTOP = 1.6;
 
-/** The Pose with each Act this far along. */
+/** The Pose with each act this far along. */
 const at = (arrival: number, turn = 0, explodedView = 0, aspect = LAPTOP) =>
   poseAt({ arrival, turn, "exploded-view": explodedView }, aspect);
 
@@ -28,7 +27,7 @@ const DIAL = [0, 0, 1] as const;
 const CROWN = [1, 0, 0] as const;
 const TOWARDS_THE_SHOPPER = 2;
 
-// An Act in a thousand steps.
+// An act in a thousand steps.
 const steps = Array.from({ length: 1001 }, (_, step) => step / 1000);
 
 /** Where a direction fixed to the watch points once the watch is posed. */
@@ -43,6 +42,15 @@ const turnBetween = (one: Pose, other: Pose) =>
 
 /** How far, in model units, the watch stands from its resting place. */
 const fromRest = (pose: Pose) => Math.hypot(...pose.place);
+
+const apart = (pose: Pose) =>
+  PARTS.some((part) => pose.parts[part].separation > 0);
+const fullyApart = (pose: Pose) =>
+  PARTS.every((part) => pose.parts[part].separation === 1);
+
+/** The Exploded View act, from the profile, in a thousand steps. */
+const explodedViewAct = (aspect = LAPTOP) =>
+  steps.map((step) => at(1, 1, step, aspect));
 
 describe("through the arrival act", () => {
   test("the watch opens turned away, set back and barely lit", () => {
@@ -110,11 +118,7 @@ describe("through the turn act", () => {
 });
 
 describe("through the Exploded View act", () => {
-  const apart = (pose: Pose) =>
-    PARTS.some((part) => pose.parts[part].separation > 0);
-  const fullyApart = (pose: Pose) =>
-    PARTS.every((part) => pose.parts[part].separation === 1);
-  const act = steps.map((step) => at(1, 1, step));
+  const act = explodedViewAct();
 
   test("the watch opens closed, every part in its place", () => {
     const [opening] = act;
@@ -157,13 +161,18 @@ describe("through the Exploded View act", () => {
     expect(lying.light).toBe(1);
   });
 
-  test("it opens into the Exploded View's layout, each part in its place", () => {
-    const open = act.find(fullyApart)!;
-    const layout = partOffsets(1);
+  test("it opens front to back, with clear air between each part and the next", () => {
+    const { parts } = act.find(fullyApart)!;
 
-    for (const part of PARTS) {
-      expect(open.parts[part].offset).toBe(layout[part]);
+    for (let i = 1; i < PARTS.length; i++) {
+      expect(
+        parts[PARTS[i - 1]].offset - parts[PARTS[i]].offset,
+      ).toBeGreaterThan(0.25);
     }
+    // The case holds its place; the rest lift off it or drop behind it.
+    expect(parts.case.offset).toBe(0);
+    expect(parts.crystal.offset).toBeGreaterThan(1);
+    expect(parts.bracelet.offset).toBeLessThan(-0.5);
   });
 
   test("it stays fully apart long enough for the seven names to be read", () => {
@@ -176,7 +185,7 @@ describe("through the Exploded View act", () => {
   });
 });
 
-test("each Act holds its first and last Pose outside its range", () => {
+test("each act holds its first and last Pose outside its range", () => {
   expect(at(-0.5)).toEqual(at(0));
   expect(at(1.5)).toEqual(at(1));
   expect(at(1, -0.5)).toEqual(at(1, 0));
@@ -186,13 +195,12 @@ test("each Act holds its first and last Pose outside its range", () => {
 });
 
 describe("from one moment to the next", () => {
-  // The most a Pose may change over a thousandth of an Act: under two
-  // degrees of turn, or a part of the watch moving by less than a sixtieth
-  // of the case's width. The quickest move in the Acts comes to four fifths
-  // of this, and a jump would be tens of times more.
+  // The most a Pose may change over a thousandth of an act, whatever it is
+  // a change of: under two degrees of turn, a sixtieth of the case's width
+  // of travel, a thirtieth of the light. A jump would be tens of times more.
   const SMALL = 0.03;
 
-  /** The biggest change between two Poses, whatever it is a change of. */
+  /** The biggest change between two Poses, in whichever of those it is. */
   const change = (before: Pose, after: Pose) =>
     Math.max(
       turnBetween(before, after),
@@ -209,142 +217,168 @@ describe("from one moment to the next", () => {
   // nearer, and on a laptop, where it steps furthest back.
   const SHAPES = [0.6, LAPTOP];
 
-  test("the whole story never jumps, nor where one Act hands over to the next", () => {
-    for (const aspect of SHAPES) {
-      // The Acts one after another, each picking up where the last ended.
-      const story = [
+  const expectNoJump = (walk: Pose[]) => {
+    for (let i = 1; i < walk.length; i++) {
+      expect(change(walk[i - 1], walk[i])).toBeLessThan(SMALL);
+    }
+  };
+
+  test.each(SHAPES)(
+    "the whole story never jumps, on a Stage %s times as wide as tall",
+    (aspect) => {
+      // The acts one after another, each picking up where the last ended.
+      expectNoJump([
         ...steps.map((step) => at(step, 0, 0, aspect)),
         ...steps.map((step) => at(1, step, 0, aspect)),
         ...steps.map((step) => at(1, 1, step, aspect)),
-      ];
-
-      for (let i = 1; i < story.length; i++) {
-        expect(change(story[i - 1], story[i])).toBeLessThan(SMALL);
-      }
-    }
-  });
-
-  test("nor does any other way through the Acts, which a brisk scroll can take", () => {
-    // Scroll plays each Act a little behind the Shopper's hand, so one Act
-    // can still be finishing as the next begins. These cross from every
-    // corner of what the three could be to the corner opposite, all three
-    // moving at once, forwards or backwards.
-    const crossings = [
-      [0, 0, 0],
-      [1, 0, 0],
-      [0, 1, 0],
-      [0, 0, 1],
-    ].map((from) =>
-      steps.map((step) => {
-        const [arrival, turn, explodedView] = from.map((start) =>
-          start === 0 ? step : 1 - step,
-        );
-        return at(arrival, turn, explodedView);
-      }),
-    );
-
-    for (const crossing of crossings) {
-      for (let i = 1; i < crossing.length; i++) {
-        expect(change(crossing[i - 1], crossing[i])).toBeLessThan(SMALL);
-      }
-    }
-  });
-});
-
-describe("on any Stage, the open watch", () => {
-  // The scene hangs the model this far in front of the point the watch turns
-  // about. It is `PIVOT_DEPTH` in HeroScene.tsx, repeated here because a unit
-  // test cannot load the scene; change the two together.
-  const PIVOT_DEPTH = 0.9;
-
-  // Stage shapes, width over height, from a phone held upright to a laptop.
-  const STAGES = [0.6, 0.75, 1, 1.33, 1.6, 1.8];
-
-  // Every point of the committed model, Part by Part. The bracelet is a
-  // ring, so its box would claim corners where there is no steel.
-  const points = {} as Record<Part, number[][]>;
-
-  beforeAll(async () => {
-    await MeshoptDecoder.ready;
-    const model = await new NodeIO()
-      .registerExtensions([EXTMeshoptCompression, KHRMeshQuantization])
-      .registerDependencies({ "meshopt.decoder": MeshoptDecoder })
-      .read(
-        path.join(
-          fileURLToPath(new URL("../../../public", import.meta.url)),
-          HERO_MODEL.main,
-        ),
-      );
-
-    for (const part of PARTS) {
-      points[part] = [];
-      const [node] = model
-        .getRoot()
-        .listNodes()
-        .filter((candidate) => candidate.getName() === part);
-      node.traverse((child) => {
-        for (const primitive of child.getMesh()?.listPrimitives() ?? []) {
-          const positions = primitive.getAttribute("POSITION")!;
-          for (let i = 0; i < positions.getCount(); i++) {
-            points[part].push(positions.getElement(i, []));
-          }
-        }
-      });
-      expect(points[part].length, `points in the ${part}`).toBeGreaterThan(0);
-    }
-  });
-
-  /**
-   * How far towards the edge of the camera's view the posed watch reaches,
-   * sideways and upright: 0 is the middle of the Stage and 1 its very edge.
-   */
-  function reach(pose: Pose, aspect: number) {
-    const turn = new Quaternion(...pose.facing);
-    const upright = Math.tan((containFov(LENS, aspect) * Math.PI) / 360);
-    const point = new Vector3();
-    const furthest = { sideways: 0, upright: 0, nearest: Infinity };
-
-    for (const part of PARTS) {
-      const lift = pose.parts[part].offset + PIVOT_DEPTH;
-      for (const [x, y, z] of points[part]) {
-        point.set(x, y, z + lift).applyQuaternion(turn);
-        const away = CAMERA_DISTANCE - (point.z + pose.place[2]);
-        furthest.nearest = Math.min(furthest.nearest, away);
-        furthest.sideways = Math.max(
-          furthest.sideways,
-          Math.abs(point.x + pose.place[0]) / (away * upright * aspect),
-        );
-        furthest.upright = Math.max(
-          furthest.upright,
-          Math.abs(point.y + pose.place[1]) / (away * upright),
-        );
-      }
-    }
-    return furthest;
-  }
-
-  test.each(STAGES)(
-    "stays in the camera's view on a Stage %s times as wide as tall",
-    (aspect) => {
-      // Every fiftieth of the act in which the watch is at all apart.
-      const open = Array.from({ length: 51 }, (_, step) =>
-        at(1, 1, step / 50, aspect),
-      ).filter((pose) => PARTS.some((part) => pose.parts[part].separation > 0));
-      expect(open.length).toBeGreaterThan(10);
-
-      for (const pose of open) {
-        const { sideways, upright, nearest } = reach(pose, aspect);
-        expect(sideways).toBeLessThan(1);
-        expect(upright).toBeLessThan(1);
-        expect(nearest).toBeGreaterThan(0);
-      }
+      ]);
     },
   );
 
-  test("fills a good share of the Stage, so it is not lost in it", () => {
-    for (const aspect of STAGES) {
-      const { sideways, upright } = reach(at(1, 1, 0.57, aspect), aspect);
-      expect(Math.max(sideways, upright)).toBeGreaterThan(0.6);
-    }
-  });
+  test.each(SHAPES)(
+    "nor where one act hands over to the next, on a Stage %s times as wide as tall",
+    (aspect) => {
+      // Scroll plays each act a little behind the Shopper's hand, so on a
+      // brisk scroll one act is still finishing as the next begins. Here the
+      // last fifth of each runs over the first fifth of the next.
+      const overlap = steps.map((step) => step / 5);
+
+      expectNoJump(overlap.map((step) => at(0.8 + step, step, 0, aspect)));
+      expectNoJump(overlap.map((step) => at(1, 0.8 + step, step, aspect)));
+    },
+  );
+
+  test.each(SHAPES)(
+    "nor on any other way through the acts, on a Stage %s times as wide as tall",
+    (aspect) => {
+      // From every corner of what the three could be to the corner opposite,
+      // all three moving at once, some forwards and some backwards.
+      const corners = [
+        [0, 0, 0],
+        [1, 0, 0],
+        [0, 1, 0],
+        [0, 0, 1],
+      ];
+
+      for (const corner of corners) {
+        expectNoJump(
+          steps.map((step) => {
+            const [arrival, turn, explodedView] = corner.map((start) =>
+              start === 0 ? step : 1 - step,
+            );
+            return at(arrival, turn, explodedView, aspect);
+          }),
+        );
+      }
+    },
+  );
 });
+
+// Phones are served the lighter model, so both are held to the same view.
+describe.each(["main", "phone"] as const)(
+  "on any Stage, the open watch, as the %s model",
+  (version) => {
+    // The scene hangs the model this far in front of the point the watch
+    // turns about. It is `PIVOT_DEPTH` in HeroScene.tsx, repeated here
+    // because a unit test cannot load the scene; change the two together.
+    const PIVOT_DEPTH = 0.9;
+
+    // Stage shapes, width over height, from a phone held upright to a laptop.
+    const STAGES = [0.6, 0.75, 1, 1.33, 1.6, 1.8];
+
+    // Every point of the committed model, part by part. The bracelet is a
+    // ring, so its box would claim corners where there is no steel.
+    const points = {} as Record<Part, number[][]>;
+
+    beforeAll(async () => {
+      await MeshoptDecoder.ready;
+      const model = await new NodeIO()
+        .registerExtensions([EXTMeshoptCompression, KHRMeshQuantization])
+        .registerDependencies({ "meshopt.decoder": MeshoptDecoder })
+        .read(
+          path.join(
+            fileURLToPath(new URL("../../../public", import.meta.url)),
+            HERO_MODEL[version],
+          ),
+        );
+
+      for (const part of PARTS) {
+        points[part] = [];
+        const [node] = model
+          .getRoot()
+          .listNodes()
+          .filter((candidate) => candidate.getName() === part);
+        // No node of the model carries a transform, so a point is where its
+        // mesh says it is.
+        node.traverse((child) => {
+          for (const primitive of child.getMesh()?.listPrimitives() ?? []) {
+            const positions = primitive.getAttribute("POSITION")!;
+            for (let i = 0; i < positions.getCount(); i++) {
+              points[part].push(positions.getElement(i, []));
+            }
+          }
+        });
+        expect(points[part].length, `points in the ${part}`).toBeGreaterThan(0);
+      }
+    });
+
+    /**
+     * How far towards the edge of the camera's view the posed watch reaches,
+     * sideways and upright: 0 is the middle of the Stage and 1 its very
+     * edge. `clearance` is how far in front of the camera its nearest point
+     * is, in model units.
+     */
+    function reach(pose: Pose, aspect: number) {
+      const facing = new Quaternion(...pose.facing);
+      // Half of what the camera sees upright, for each unit of distance.
+      const halfView = Math.tan((containFov(LENS, aspect) * Math.PI) / 360);
+      const point = new Vector3();
+      const reached = { sideways: 0, upright: 0, clearance: Infinity };
+
+      for (const part of PARTS) {
+        const lift = pose.parts[part].offset + PIVOT_DEPTH;
+        for (const [x, y, z] of points[part]) {
+          point.set(x, y, z + lift).applyQuaternion(facing);
+          const distance = CAMERA_DISTANCE - (point.z + pose.place[2]);
+          reached.clearance = Math.min(reached.clearance, distance);
+          reached.sideways = Math.max(
+            reached.sideways,
+            Math.abs(point.x + pose.place[0]) / (distance * halfView * aspect),
+          );
+          reached.upright = Math.max(
+            reached.upright,
+            Math.abs(point.y + pose.place[1]) / (distance * halfView),
+          );
+        }
+      }
+      return reached;
+    }
+
+    test.each(STAGES)(
+      "stays in the camera's view on a Stage %s times as wide as tall",
+      (aspect) => {
+        // Every twentieth step of the act in which the watch is at all apart.
+        const open = explodedViewAct(aspect)
+          .filter((_, step) => step % 20 === 0)
+          .filter(apart);
+        expect(open.length).toBeGreaterThan(10);
+
+        for (const pose of open) {
+          const { sideways, upright, clearance } = reach(pose, aspect);
+          expect(sideways).toBeLessThan(1);
+          expect(upright).toBeLessThan(1);
+          expect(clearance).toBeGreaterThan(0);
+        }
+      },
+    );
+
+    test("fills a good share of the Stage, so it is not lost in it", () => {
+      for (const aspect of STAGES) {
+        const open = explodedViewAct(aspect).find(fullyApart)!;
+        const { sideways, upright } = reach(open, aspect);
+
+        expect(Math.max(sideways, upright)).toBeGreaterThan(0.6);
+      }
+    });
+  },
+);

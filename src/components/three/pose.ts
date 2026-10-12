@@ -1,6 +1,6 @@
-// The Hero Timepiece's Pose: how the watch is held at one moment of the Acts.
-// It is a pure function of each Act's progress and the Stage's shape, so
-// scrolling back up plays every Act in reverse, and the frame loop has only
+// The Hero Timepiece's Pose: how the watch is held at one moment of the acts.
+// It is a pure function of each act's progress and the Stage's shape, so
+// scrolling back up plays every act in reverse, and the frame loop has only
 // to apply what it is given. The Shopper's drag is not part of it: the frame
 // loop adds that on top.
 
@@ -40,13 +40,13 @@ export type Pose = {
   light: number;
   /** How far the studio has turned about the upright axis, in radians. */
   studioTurn: number;
-  /** Where the Exploded View has each Part. */
+  /** Where the Exploded View has each part. */
   parts: Record<Part, PartPose>;
 };
 
 export type PartPose = {
   /**
-   * How far the Part is from its place along the watch's axis, in model
+   * How far the part is from its place along the watch's axis, in model
    * units, positive towards the Shopper's side of the dial.
    */
   offset: number;
@@ -113,7 +113,9 @@ function arrival(progress: number) {
 const TURNS = [0.05, 0.8] as const;
 
 /** How far the watch has turned: 0 as it arrived, 1 in profile. */
-const turn = (progress: number) => swell(through(TURNS, progress));
+function turn(progress: number) {
+  return swell(through(TURNS, progress));
+}
 
 // The Exploded View act: the watch lies down, lifts apart, closes and rises
 // again. This is its score, as stretches of its progress. The moves follow
@@ -137,11 +139,12 @@ function explodedView(progress: number) {
   };
 }
 
-const arriving = new Euler();
-const facing = new Quaternion();
+// Kept between calls, so that working out a Pose makes nothing but the Pose.
+const tilt = new Euler();
+const held = new Quaternion();
 
 /**
- * The Pose of a watch this far along each Act, on a Stage of the given
+ * The Pose of a watch this far along each act, on a Stage of the given
  * aspect (width over height). It is defined for any three values, not only
  * those scroll can produce, and a small change in any of them is a small
  * change in the Pose.
@@ -154,9 +157,9 @@ export function poseAt(progress: Record<Act, number>, aspect: number): Pose {
   // A slerp is the shortest turn from one way of holding the watch to
   // another. The acts chain three: round to the profile, down onto its
   // back, and up again to rest.
-  arriving.set(REST.pitch + arrived.pitch, REST.yaw + arrived.yaw, 0);
-  facing
-    .setFromEuler(arriving)
+  tilt.set(REST.pitch + arrived.pitch, REST.yaw + arrived.yaw, 0);
+  held
+    .setFromEuler(tilt)
     .slerp(IN_PROFILE, turned)
     .slerp(LYING, laid)
     .slerp(RESTING, risen);
@@ -173,7 +176,7 @@ export function poseAt(progress: Record<Act, number>, aspect: number): Pose {
   }
 
   return {
-    facing: [facing.x, facing.y, facing.z, facing.w],
+    facing: [held.x, held.y, held.z, held.w],
     place: [
       LYING_PLACE.x * lying,
       LYING_PLACE.y * lying,
