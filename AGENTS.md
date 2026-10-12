@@ -80,7 +80,7 @@ Do not invent new ones. For React Three Fiber, drei, Zustand and Next.js, read t
 - Cart (`src/store/cart.ts`): the Shopper's cart, kept in their browser.
 - 3D (`src/components/three`): the canvas, the Hero Timepiece, its parts, materials and clock.
 - Sections (`src/components/home`, `shop`, `ui`): one component per act, section or widget.
-- Model tooling (`scripts/`): offline scripts that turn `models-raw/` into `public/models/` and render catalogue stills.
+- Model tooling (`scripts/`): offline scripts that turn `models-raw/` into `public/models/` and render catalogue stills. `npm run models` prepares the Hero Timepiece and its phone variant; `src/components/three/hero-model.ts` lists the part names and what scene code may rely on.
 
 Pages and components never import `src/data` directly; they call the Catalogue, whose functions are async so a real backend can replace the sample data later (section 7). Everything under `components/three` is client-only and loaded dynamically, with a still image in its place until it is ready. Scripts never run in the browser or at build time on Vercel; their outputs are committed.
 
@@ -152,8 +152,9 @@ You cannot infer these from the code, so keep them in mind.
 
 - `models-raw/` is git-ignored and holds three downloads. Only two may ship: the Stainless Steel Wristwatch (by render-lab) and the Swiss lever escapement (by C. Yamahata), both CC-BY-4.0. The "Luxury Wristwatch" is a copy of a real Seiko; never use it or any other real brand's name, logo or dial.
 - CC-BY requires credit. The exact credit lines are in each archive's `license.txt`; keep them on the credits page and in the README.
-- The source watch has no separate hands mesh; they are fused into another part. Split them in the prepare script, or build Tolvik's own baton hands in code.
-- Nearly every part of the source watch shares one material, so assign materials per part in code.
+- `models-raw/` holds two zips of the Stainless Steel Wristwatch with near-identical names. The prepare script reads the glTF one, `stainless_steel_wristwatch_analog_watch.zip` (underscores); the hyphenated one is an FBX and is not used.
+- The source watch fuses its three hands into one mesh. The prepare script splits them into hour, minute and second hands, each pointing at twelve with its pivot at the origin, so setting the time is one rotation about Z per hand.
+- Nearly every part of the source watch shares one material, so the prepared model carries none; assign materials per part in code. The bracelet's links are open shells and need a double-sided material.
 - The escapement ships with an animation named "Oscillating mechanism". Use it instead of animating the parts by hand.
 - `.claude/skills/` is git-ignored. On a fresh clone, restore the skills listed in `skills-lock.json` with the skills CLI.
 - scroll-craft's `scripts/kie.mjs` uploads to a paid image service. Never run it.
