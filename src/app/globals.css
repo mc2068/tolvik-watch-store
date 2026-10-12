@@ -1,1 +1,148 @@
 @import "tailwindcss";
+
+/*
+ * The Tolvik look. Every colour, typeface, size, space and easing on the site
+ * is named here once; components take their values from these tokens through
+ * Tailwind's utilities (`bg-ink`, `text-display`, `px-gutter`, `ease-settle`).
+ *
+ * Tailwind's stock colours, fonts, type sizes, tracking, easings, radii and
+ * shadows are switched off, so none of them has a utility to reach for.
+ * Corners are square and nothing casts a shadow: the site has no radius or
+ * shadow tokens on purpose.
+ */
+@theme {
+  /* Colour: one dark theme. Ink black, platinum grey, one steel-blue accent. */
+  --color-*: initial;
+  --color-ink: #080a0d;
+  --color-line: #232a33;
+  --color-platinum: #e4e6e8;
+  --color-platinum-dim: #a2a8af;
+  /* Decoration only: too faint for text (4.1:1 on ink). */
+  --color-platinum-faint: #6b727b;
+  /* The accent marks twelve o'clock and whatever the Shopper is pointing at. */
+  --color-steel: #7fa3c6;
+
+  /* Type: a serif display face with a quiet sans. Loaded in layout.tsx. */
+  --font-*: initial;
+  --font-display: var(--font-spectral), Georgia, "Times New Roman", serif;
+  --font-sans: var(--font-schibsted), ui-sans-serif, system-ui, sans-serif;
+
+  --text-*: initial;
+  --text-display: clamp(2.75rem, 1.55rem + 5.4vw, 6rem);
+  --text-display--line-height: 1.02;
+  --text-display--letter-spacing: -0.022em;
+  --text-display--font-weight: 300;
+  --text-title: clamp(1.75rem, 1.4rem + 1.5vw, 2.5rem);
+  --text-title--line-height: 1.15;
+  --text-title--letter-spacing: -0.012em;
+  --text-title--font-weight: 300;
+  --text-lead: clamp(1.125rem, 1.05rem + 0.35vw, 1.3125rem);
+  --text-lead--line-height: 1.6;
+  --text-body: 1rem;
+  --text-body--line-height: 1.65;
+  --text-small: 0.875rem;
+  --text-small--line-height: 1.55;
+
+  --tracking-*: initial;
+  --tracking-wordmark: 0.34em;
+  --tracking-open: 0.02em;
+
+  /* Space: Tailwind's 4px step, plus the two distances that set the rhythm. */
+  --spacing-gutter: clamp(1.25rem, 0.5rem + 3.4vw, 4rem);
+  --spacing-section: clamp(4.5rem, 2.5rem + 9vw, 10rem);
+  --spacing-header: 4rem;
+  /* A full first screen: the viewport less the header, in dvh so it does not
+     jump as a phone's toolbars show and hide. */
+  --spacing-viewport: calc(100dvh - var(--spacing-header));
+  --container-page: 90rem;
+  --container-measure: 34rem;
+  --container-statement: 15ch;
+
+  /* The dial figure. On a laptop the whole dial stands beside the statement.
+     Below that it is drawn wider than the screen, so only its top arc shows:
+     dial-wide is the width it is drawn at, dial-arc the depth of the strip it
+     is cropped to. */
+  --container-dial: min(36vw, 36rem);
+  --container-dial-wide: 145vw;
+  --spacing-dial-arc: calc(2.5rem + 34vw);
+
+  --radius-*: initial;
+  --shadow-*: initial;
+
+  /* Motion: restrained. Things settle into place; nothing bounces. */
+  --ease-*: initial;
+  --ease-settle: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Tokens Tailwind's theme has no namespace for, so they are plain custom
+   properties: `duration-(--duration-quick)`, `z-(--layer-header)`. */
+:root {
+  --duration-quick: 180ms;
+  --duration-calm: 420ms;
+
+  /* Layers, lowest first. Nothing else on the site sets a z-index. */
+  --layer-header: 10;
+
+  color-scheme: dark;
+}
+
+@media (min-width: 48rem) {
+  :root {
+    --spacing-header: 4.5rem;
+  }
+}
+
+@layer base {
+  html {
+    background-color: var(--color-ink);
+    scroll-padding-top: var(--spacing-header);
+  }
+
+  body {
+    background-color: var(--color-ink);
+    color: var(--color-platinum);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::selection {
+    background-color: var(--color-steel);
+    color: var(--color-ink);
+  }
+
+  /* One focus ring for every link, button and field on the site. */
+  :focus-visible {
+    outline: 2px solid var(--color-steel);
+    outline-offset: 4px;
+  }
+}
+
+/* The frame every band of the site sits in: centred, capped, with the gutter. */
+@utility page-frame {
+  margin-inline: auto;
+  max-width: var(--container-page);
+  padding-inline: var(--spacing-gutter);
+}
+
+/* A link inside a sentence: underlined in the accent so it reads as a link
+   without relying on colour alone. */
+@utility text-link {
+  color: var(--color-platinum);
+  text-decoration: underline 1px var(--color-steel);
+  text-underline-offset: 4px;
+  transition: color var(--duration-quick) var(--ease-settle);
+
+  &:hover {
+    color: var(--color-steel);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-quick: 0ms;
+    --duration-calm: 0ms;
+  }
+}
