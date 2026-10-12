@@ -22,6 +22,7 @@ import { arrivalPose } from "@/components/three/arrival";
 import { explodedViewPose } from "@/components/three/exploded-view";
 import { containFov, distanceToFit } from "@/components/three/framing";
 import { HeroTimepiece } from "@/components/three/HeroTimepiece";
+import { LOOKS } from "@/components/three/prototype-looks";
 import { turnPose } from "@/components/three/turn";
 import { useExplodedView } from "@/components/three/use-exploded-view";
 import {
@@ -29,6 +30,11 @@ import {
   useLookAround,
 } from "@/components/three/use-look-around";
 import { actProgress } from "@/lib/act-progress";
+import {
+  prototypeVariant,
+  type Variant,
+  VARIANT_KEYS,
+} from "@/lib/prototype-variant";
 import { token } from "@/lib/tokens";
 
 // The camera: a long lens set well back, as a product photographer would
@@ -60,21 +66,13 @@ const IN_PROFILE = new Quaternion().setFromEuler(
 // where the side of the case and the crown reflect it.
 const PROFILE_STUDIO_TURN = 1.5;
 
-// How it lies for the Exploded View: on its back, dial up, so its axis
-// stands upright on the Stage and the parts lift one above another. It is
-// tipped towards the Shopper, who looks down onto each part, and turned on
-// its axis to bring the crown round to the front.
-const LYING_TIP = 0.42;
-const LYING_TURN = -0.6;
-const LYING = new Quaternion().setFromEuler(
-  new Euler(LYING_TIP - Math.PI / 2, 0, LYING_TURN),
-);
-// Lying down, the watch also steps back and aside. The open layout, with the
-// parts' names to its right, is this big in model units, far more than the
-// watch, and must be seen whole on any Stage; the watch's axis stands left
-// of its middle, to leave the names their room.
-const OPEN_WATCH = { width: 4.3, height: 5.3 } as const;
-const LYING_PLACE = { x: -0.6, y: -0.1 } as const;
+// PROTOTYPE: how the watch lies in each variant's look.
+const LYING_IN = Object.fromEntries(
+  VARIANT_KEYS.map((key) => [
+    key,
+    new Quaternion().setFromEuler(new Euler(...LOOKS[key].lying)),
+  ]),
+) as Record<Variant, Quaternion>;
 
 const KEY_LIGHT = 1.4;
 
@@ -238,9 +236,11 @@ function Pose({
 
     const arrival = arrivalPose(actProgress.get("arrival"));
     const { turned } = turnPose(actProgress.get("turn"));
-    const { laid, apart, risen } = explodedViewPose(
-      actProgress.get("exploded-view"),
-    );
+    const explodedView = actProgress.get("exploded-view");
+    const { laid, apart, risen } = explodedViewPose(explodedView);
+    // PROTOTYPE: the variant in effect decides the open watch's look.
+    const variant = prototypeVariant.get();
+    const open = LOOKS[variant];
 
     // A slerp is the shortest turn from one way of holding the watch to
     // another. The acts chain three: round to the profile, down onto its
@@ -249,24 +249,27 @@ function Pose({
     watch.current.quaternion
       .setFromEuler(arrived)
       .slerp(IN_PROFILE, turned)
-      .slerp(LYING, laid)
+      .slerp(LYING_IN[variant], laid)
       .slerp(RESTING, risen);
 
     const lying = laid * (1 - risen);
     const lyingDepth =
-      distanceToFit(OPEN_WATCH, LENS, size.width / size.height) -
+      distanceToFit(open.layout, LENS, size.width / size.height) -
       CAMERA_DISTANCE;
     stand.current.position.set(
-      LYING_PLACE.x * lying,
-      LYING_PLACE.y * lying,
+      open.place.x * lying,
+      open.place.y * lying,
       -arrival.depth - lyingDepth * lying,
     );
     stand.current.rotation.set(now.pitch, now.yaw, 0);
     scene.environmentIntensity = arrival.light;
-    scene.environmentRotation.y = PROFILE_STUDIO_TURN * turned * (1 - laid);
+    scene.environmentRotation.y =
+      PROFILE_STUDIO_TURN *
+      turned *
+      (1 - (open.keepsStudioTurn ? risen : laid));
     keyLight.current.intensity = KEY_LIGHT * arrival.light;
 
-    explode(apart, camera, gl.domElement);
+    explode(apart, camera, gl.domElement, explodedView);
   });
 
   return (

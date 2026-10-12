@@ -31,12 +31,20 @@ const STAGGER = 0.5;
  * How far each part has left its place, from 0 at rest to 1 fully apart,
  * for a watch that is `progress` of the way to its full layout.
  */
-export function partSeparation(progress: number): Record<Part, number> {
+export function partSeparation(
+  progress: number,
+  // PROTOTYPE: each look brings its own travel.
+  travel: Record<Part, number> = FULL_OFFSET,
+): Record<Part, number> {
   const t = clamp01(progress);
   const separation = {} as Record<Part, number>;
+  const reach =
+    travel === FULL_OFFSET
+      ? REACH
+      : Math.max(...PARTS.map((part) => Math.abs(travel[part])));
 
   for (const part of PARTS) {
-    const wait = STAGGER * (1 - Math.abs(FULL_OFFSET[part]) / REACH);
+    const wait = STAGGER * (1 - Math.abs(travel[part]) / reach);
     separation[part] = swell(through([wait, wait + 1 - STAGGER], t));
   }
   return separation;
@@ -47,12 +55,16 @@ export function partSeparation(progress: number): Record<Part, number> {
  * model units, positive towards the Shopper's side of the dial. At 0 every
  * part is at rest; at 1 every part is at its full offset.
  */
-export function partOffsets(progress: number): Record<Part, number> {
-  const separation = partSeparation(progress);
+export function partOffsets(
+  progress: number,
+  // PROTOTYPE: each look brings its own travel.
+  travel: Record<Part, number> = FULL_OFFSET,
+): Record<Part, number> {
+  const separation = partSeparation(progress, travel);
   const offsets = {} as Record<Part, number>;
 
   for (const part of PARTS) {
-    offsets[part] = FULL_OFFSET[part] * separation[part];
+    offsets[part] = travel[part] * separation[part];
   }
   return offsets;
 }

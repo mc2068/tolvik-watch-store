@@ -7,7 +7,9 @@ import { ActFrame } from "@/components/home/ActFrame";
 import { useActScore } from "@/components/home/use-act-score";
 import { EXPLODED_VIEW_CLOSES } from "@/components/three/exploded-view";
 import { type Part, PARTS } from "@/components/three/hero-model";
+import { type Look, LOOKS } from "@/components/three/prototype-looks";
 import { partLabels } from "@/lib/part-labels";
+import { prototypeVariant } from "@/lib/prototype-variant";
 
 const PART_NAMES: Record<Part, string> = {
   crystal: "Crystal",
@@ -40,6 +42,15 @@ export function ExplodedView({
 }) {
   const act = useRef<HTMLElement>(null);
   const statement = useRef<HTMLDivElement>(null);
+  const copyNames = useRef<HTMLDivElement>(null);
+
+  // PROTOTYPE: the look of the variant in effect.
+  const variant = useSyncExternalStore(
+    prototypeVariant.onChange,
+    prototypeVariant.get,
+    () => "A" as const,
+  );
+  const look = LOOKS[variant];
 
   // Whether the 3D scene is on the page and saying where each part is. This
   // flips once, when the scene arrives or goes; the places themselves change
@@ -57,6 +68,9 @@ export function ExplodedView({
       { opacity: 0, duration: STATEMENT_FADE },
       EXPLODED_VIEW_CLOSES[0] - STATEMENT_FADE,
     );
+    // PROTOTYPE: names set in the copy stay until the last has been called
+    // out, and are gone before the price comes up over them.
+    score.to(copyNames.current, { opacity: 0, duration: 0.04 }, 0.67);
   });
 
   // One list of names, set two ways: beside a live watch, a name to each
@@ -79,9 +93,12 @@ export function ExplodedView({
             Each one has a single job. Together they keep the time dry, legible
             and on your wrist.
           </p>
-          {!placed && <NamesInALine />}
         </div>
-        {placed && <NamesBesideTheParts />}
+        <div ref={copyNames}>
+          {!placed && <NamesInALine />}
+          {placed && !look.names && <NamesAsAnIndex />}
+        </div>
+        {placed && look.names && <NamesBesideTheParts names={look.names} />}
       </ActFrame>
 
       {/* The offer is the last screen of the act and scrolls up into place
@@ -127,7 +144,11 @@ function NamesInALine() {
  * each name follows its part: the scene says where on the screen it belongs
  * and how much of it to show, and the name is moved there.
  */
-function NamesBesideTheParts() {
+function NamesBesideTheParts({
+  names,
+}: {
+  names: NonNullable<Look["names"]>;
+}) {
   const list = useRef<HTMLOListElement>(null);
   const items = useRef(new Map<Part, HTMLLIElement>());
 
@@ -167,14 +188,61 @@ function NamesBesideTheParts() {
         >
           {/* The name starts where the scene points, after a short rule
               that leads the eye back to the part. A phone has less room
-              beside the watch, so a long name takes two lines there. */}
-          <span className="absolute top-0 left-0 flex w-max -translate-y-1/2 items-center gap-3 text-small leading-tight tracking-open text-platinum">
+              beside the watch, so a long name takes two lines there.
+              PROTOTYPE: a name can also stand above or below its part. */}
+          {names[part][1] === 0 ? (
+            <span className="absolute top-0 left-0 flex w-max -translate-y-1/2 items-center gap-3 text-small leading-tight tracking-open text-platinum">
+              <span
+                aria-hidden="true"
+                className="h-px w-6 shrink-0 bg-platinum-faint"
+              />
+              <span className="max-w-24 lg:max-w-none">
+                {PART_NAMES[part]}
+              </span>
+            </span>
+          ) : (
             <span
-              aria-hidden="true"
-              className="h-px w-6 shrink-0 bg-platinum-faint"
-            />
-            <span className="max-w-24 lg:max-w-none">{PART_NAMES[part]}</span>
-          </span>
+              className={`absolute top-0 left-0 flex w-max -translate-x-1/2 items-center gap-2 text-small leading-tight tracking-open text-platinum ${names[part][1] > 0 ? "-translate-y-full flex-col-reverse" : "flex-col"}`}
+            >
+              <span
+                aria-hidden="true"
+                className="h-6 w-px shrink-0 bg-platinum-faint"
+              />
+              <span>{PART_NAMES[part]}</span>
+            </span>
+          )}
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+/**
+ * PROTOTYPE (variant C): the names as an index in the act's copy. The scene
+ * calls the parts out one at a time and says which; that name lights up.
+ */
+function NamesAsAnIndex() {
+  const focus = useSyncExternalStore(
+    prototypeVariant.onChange,
+    prototypeVariant.focus,
+    () => -1,
+  );
+
+  return (
+    <ol
+      aria-label={PARTS_LABEL}
+      className="mt-6 flex flex-wrap gap-x-5 gap-y-1 lg:mt-10 lg:block"
+    >
+      {PARTS.map((part, index) => (
+        <li
+          key={part}
+          className={`flex items-center gap-3 font-display text-lead transition-opacity duration-(--duration-quick) ease-settle lg:py-1 ${index === focus ? "text-platinum" : "text-platinum-dim opacity-50"}`}
+        >
+          <span
+            aria-hidden="true"
+            className={`hidden h-px w-8 bg-steel transition-opacity duration-(--duration-quick) ease-settle lg:block ${index === focus ? "" : "opacity-0"}`}
+          />
+          {PART_NAMES[part]}
         </li>
       ))}
     </ol>
