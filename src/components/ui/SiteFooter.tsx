@@ -6,7 +6,7 @@ export function SiteFooter() {
 
   return (
     <footer className="border-t border-line">
-      <div className="mx-auto grid max-w-page gap-10 px-gutter py-14 text-small text-platinum-dim md:grid-cols-2 md:items-end md:py-16">
+      <div className="page-frame grid gap-10 py-14 text-small text-platinum-dim md:grid-cols-2 md:items-end md:py-16">
         <div className="grid gap-5">
           <Wordmark />
           <p className="max-w-measure">

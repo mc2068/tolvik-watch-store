@@ -5,16 +5,15 @@
  * is named here once; components take their values from these tokens through
  * Tailwind's utilities (`bg-ink`, `text-display`, `px-gutter`, `ease-settle`).
  *
- * Tailwind's stock colours, fonts, type sizes and easings are switched off, so
- * a value that is not a Tolvik token has no utility to reach for.
- *
- * Corners are square everywhere: the site has no radius tokens on purpose.
+ * Tailwind's stock colours, fonts, type sizes, tracking, easings, radii and
+ * shadows are switched off, so none of them has a utility to reach for.
+ * Corners are square and nothing casts a shadow: the site has no radius or
+ * shadow tokens on purpose.
  */
 @theme {
   /* Colour: one dark theme. Ink black, platinum grey, one steel-blue accent. */
   --color-*: initial;
   --color-ink: #080a0d;
-  --color-ink-raised: #10141a;
   --color-line: #232a33;
   --color-platinum: #e4e6e8;
   --color-platinum-dim: #a2a8af;
@@ -52,15 +51,31 @@
   --spacing-gutter: clamp(1.25rem, 0.5rem + 3.4vw, 4rem);
   --spacing-section: clamp(4.5rem, 2.5rem + 9vw, 10rem);
   --spacing-header: 4rem;
+  /* A full first screen: the viewport less the header, in dvh so it does not
+     jump as a phone's toolbars show and hide. */
+  --spacing-viewport: calc(100dvh - var(--spacing-header));
   --container-page: 90rem;
   --container-measure: 34rem;
+  --container-statement: 15ch;
+
+  /* The dial figure. On a laptop the whole dial stands beside the statement.
+     Below that it is drawn wider than the screen, so only its top arc shows:
+     dial-wide is the width it is drawn at, dial-arc the depth of the strip it
+     is cropped to. */
+  --container-dial: min(36vw, 36rem);
+  --container-dial-wide: 145vw;
+  --spacing-dial-arc: calc(2.5rem + 34vw);
+
+  --radius-*: initial;
+  --shadow-*: initial;
 
   /* Motion: restrained. Things settle into place; nothing bounces. */
   --ease-*: initial;
   --ease-settle: cubic-bezier(0.22, 1, 0.36, 1);
-  --ease-glide: cubic-bezier(0.65, 0, 0.35, 1);
 }
 
+/* Tokens Tailwind's theme has no namespace for, so they are plain custom
+   properties: `duration-(--duration-quick)`, `z-(--layer-header)`. */
 :root {
   --duration-quick: 180ms;
   --duration-calm: 420ms;
@@ -103,6 +118,13 @@
     outline: 2px solid var(--color-steel);
     outline-offset: 4px;
   }
+}
+
+/* The frame every band of the site sits in: centred, capped, with the gutter. */
+@utility page-frame {
+  margin-inline: auto;
+  max-width: var(--container-page);
+  padding-inline: var(--spacing-gutter);
 }
 
 /* A link inside a sentence: underlined in the accent so it reads as a link

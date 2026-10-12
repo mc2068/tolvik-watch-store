@@ -10,7 +10,7 @@ import { site } from "@/lib/site";
 // Menu button opens; `open` only matters there.
 export function MainNavigation() {
   const [open, setOpen] = useState(false);
-  const toggle = useRef<HTMLButtonElement>(null);
+  const menuButton = useRef<HTMLButtonElement>(null);
   const listId = useId();
 
   useEffect(() => {
@@ -19,7 +19,7 @@ export function MainNavigation() {
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
       setOpen(false);
-      toggle.current?.focus();
+      menuButton.current?.focus();
     };
 
     document.addEventListener("keydown", closeOnEscape);
@@ -29,7 +29,7 @@ export function MainNavigation() {
   return (
     <nav aria-label="Main">
       <button
-        ref={toggle}
+        ref={menuButton}
         type="button"
         aria-expanded={open}
         aria-controls={listId}

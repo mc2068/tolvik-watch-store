@@ -20,17 +20,24 @@ const principles = [
 
 export function Craftsmanship() {
   return (
-    <section id="craftsmanship" className="overflow-hidden">
-      <div className="mx-auto max-w-page px-gutter pb-section">
+    <section
+      id="craftsmanship"
+      aria-labelledby="craftsmanship-statement"
+      className="overflow-hidden"
+    >
+      <div className="page-frame pb-section">
         {/* Phone and tablet: the dial is wider than the screen, so only its
             top arc shows, twelve in the middle, above the statement.
             Desktop: the whole dial stands beside the statement. */}
-        <div className="relative pt-[calc(2.5rem+38vw)] lg:flex lg:min-h-[calc(100dvh-var(--spacing-header))] lg:flex-col lg:justify-center lg:py-24">
-          <div className="pointer-events-none absolute -inset-x-gutter top-0 h-[calc(2.5rem+34vw)] overflow-hidden lg:inset-x-auto lg:top-1/2 lg:right-0 lg:h-auto lg:w-[min(36vw,36rem)] lg:-translate-y-1/2 lg:overflow-visible">
-            <DialTrack className="absolute top-10 left-1/2 w-[145vw] max-w-none -translate-x-1/2 lg:static lg:w-full lg:translate-x-0" />
+        <div className="relative pt-dial-arc lg:flex lg:min-h-viewport lg:flex-col lg:justify-center lg:py-24">
+          <div className="pointer-events-none absolute -inset-x-gutter top-0 h-dial-arc overflow-hidden lg:inset-x-auto lg:top-1/2 lg:right-0 lg:h-auto lg:w-dial lg:-translate-y-1/2 lg:overflow-visible">
+            <DialTrack className="absolute top-10 left-1/2 w-dial-wide max-w-none -translate-x-1/2 lg:static lg:w-full lg:translate-x-0" />
           </div>
 
-          <h1 className="relative max-w-[15ch] font-display text-display text-balance">
+          <h1
+            id="craftsmanship-statement"
+            className="relative mt-4 max-w-statement font-display text-display text-balance md:mt-8 lg:mt-0"
+          >
             Made to be read in the dark.
           </h1>
           <p className="relative mt-8 max-w-measure text-lead text-platinum-dim md:mt-10">

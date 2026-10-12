@@ -7,7 +7,9 @@ test("Home states Tolvik's craftsmanship in real text", async ({ page }) => {
     "Made to be read in the dark.",
   );
 
-  const craftsmanship = page.locator("#craftsmanship");
+  const craftsmanship = page.getByRole("region", {
+    name: "Made to be read in the dark.",
+  });
   for (const principle of [
     "Legibility first",
     "Steel throughout",

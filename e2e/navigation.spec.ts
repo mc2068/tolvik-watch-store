@@ -30,6 +30,19 @@ test("the navigation links lead to the Collection and to Craftsmanship", async (
   ).toHaveAttribute("href", "/#craftsmanship");
 });
 
+test("the navigation sits on one line on desktop, no more than 80px tall", async ({
+  page,
+}) => {
+  await page.goto("/");
+
+  const banner = page.getByRole("banner");
+  const top = async (name: string) =>
+    (await banner.getByRole("link", { name }).boundingBox())?.y;
+
+  expect((await banner.boundingBox())?.height).toBeLessThanOrEqual(80);
+  expect(await top("Collection")).toBe(await top("Craftsmanship"));
+});
+
 test.describe("at phone width", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
@@ -45,12 +58,16 @@ test.describe("at phone width", () => {
     await expect(banner.getByRole("link", { name: "Tolvik" })).toBeVisible();
     await expect(collection).toBeHidden();
 
-    await banner.getByRole("button", { name: "Menu" }).click();
+    // By keyboard alone: the menu must not need a pointer.
+    const menu = banner.getByRole("button", { name: "Menu" });
+    await menu.focus();
+    await page.keyboard.press("Enter");
     await expect(collection).toBeVisible();
     await expect(craftsmanship).toBeVisible();
 
     await page.keyboard.press("Escape");
     await expect(collection).toBeHidden();
-    await expect(banner.getByRole("button", { name: "Menu" })).toBeFocused();
+    await expect(menu).toBeFocused();
+    await expect(menu).toHaveCSS("outline-style", "solid");
   });
 });
