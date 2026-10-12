@@ -1,0 +1,27 @@
+# third-party agent skills (restored from skills-lock.json)
+.claude/skills/
+
+# downloaded source models, before optimisation
+models-raw/
+
+# dependencies
+/node_modules
+
+# next.js
+/.next/
+/out/
+next-env.d.ts
+*.tsbuildinfo
+
+# test output
+/test-results/
+
+# env files
+.env*
+
+# vercel
+.vercel
+
+# misc
+.DS_Store
+npm-debug.log*
