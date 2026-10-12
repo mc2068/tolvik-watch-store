@@ -11,7 +11,8 @@
 // Each Still is a photograph of the real thing. The script serves the built
 // site, opens Home in a headless browser, waits for the scene and captures
 // the square the camera composes the watch in. Rendered from the scene
-// itself, the opening Still matches the canvas that replaces it.
+// itself, the opening Still matches the canvas that replaces it in all but
+// the time on the dial.
 //
 // Like `npm run models` it runs offline, on a developer's machine, and its
 // outputs are committed. Run it again whenever the model, its materials, the
@@ -36,6 +37,10 @@ const QUALITY = 0.9;
 // Two device pixels to each CSS pixel, so the square is half of SIDE on the
 // page.
 const DENSITY = 2;
+
+// The time on the dial in every Still: eight minutes past ten, the pose that
+// shows a dial at its clearest. The live watch shows the Shopper's own time.
+const SHOWN_TIME = { hours: 10, minutes: 8, seconds: 37 };
 
 function freePort() {
   return new Promise((resolve, reject) => {
@@ -127,6 +132,15 @@ async function main() {
       viewport: { width: 1400, height: 900 },
       deviceScaleFactor: DENSITY,
     });
+    // The watch reads the hour, minute and second off the page's clock, in
+    // `use-clock.ts`. Only those three readings are held: the clock itself
+    // must keep running, or the arrival act, which GSAP times by it, would
+    // never play.
+    await page.addInitScript(({ hours, minutes, seconds }) => {
+      Date.prototype.getHours = () => hours;
+      Date.prototype.getMinutes = () => minutes;
+      Date.prototype.getSeconds = () => seconds;
+    }, SHOWN_TIME);
     await page.goto(site.url);
     const figure = page.locator('[data-hero-timepiece="ready"]');
     await figure.waitFor({ timeout: 60_000 });

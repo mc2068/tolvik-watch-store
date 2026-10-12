@@ -114,8 +114,9 @@ export function HeroStage() {
 
 /**
  * The Still in the watch's place. There are two. A Shopper about to get the
- * 3D sees the opening frame of the arrival act, so the canvas can take over
- * without a visible change. Everyone else sees the watch arrived and lit:
+ * 3D sees the opening frame of the arrival act, so that when the canvas
+ * takes over only the hands move, from the Still's ten past ten to the
+ * Shopper's own time. Everyone else sees the watch arrived and lit:
  * the browser picks it by itself when reduced motion is preferred, and
  * `awaiting3D` turns false when the 3D will never come.
  */
