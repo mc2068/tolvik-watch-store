@@ -45,6 +45,17 @@ export const HERO_MODEL = {
   phone: "/models/hero-timepiece-phone.glb",
 } as const;
 
+/**
+ * The Stills that stand in the watch's place on Home, as `npm run stills`
+ * renders them. `opening` is the first frame of the arrival act, shown until
+ * the 3D has been drawn. `arrived` is the watch at rest in full light, shown
+ * wherever the 3D never comes.
+ */
+export const HERO_STILL = {
+  opening: "/stills/hero-timepiece-opening.webp",
+  arrived: "/stills/hero-timepiece.webp",
+} as const;
+
 /** The most each file may weigh, in bytes. `npm run models` enforces it. */
 export const HERO_MODEL_BUDGET = {
   main: 1500 * 1024,

@@ -80,7 +80,7 @@ Do not invent new ones. For React Three Fiber, drei, Zustand and Next.js, read t
 - Cart (`src/store/cart.ts`): the Shopper's cart, kept in their browser.
 - 3D (`src/components/three`): the canvas, the Hero Timepiece, its parts, materials and clock.
 - Sections (`src/components/home`, `shop`, `ui`): one component per act, section or widget.
-- Model tooling (`scripts/`): offline scripts that turn `models-raw/` into `public/models/` and render catalogue stills. `npm run models` prepares the Hero Timepiece and its lighter phone model; `src/components/three/hero-model.ts` sets the part names and says what scene code may rely on.
+- Model tooling (`scripts/`): offline scripts that turn `models-raw/` into `public/models/` and render stills. `npm run models` prepares the Hero Timepiece and its lighter phone model; `src/components/three/hero-model.ts` sets the part names and says what scene code may rely on. `npm run stills` builds the site and photographs the live scene into `public/stills/`.
 
 Pages and components never import `src/data` directly; they call the Catalogue, whose functions are async so a real backend can replace the sample data later (section 7). Everything under `components/three` is client-only and loaded dynamically, with a still image in its place until it is ready. Scripts never run in the browser or at build time on Vercel; their outputs are committed.
 
@@ -156,9 +156,13 @@ You cannot infer these from the code, so keep them in mind.
 - The source watch fuses its three hands into one mesh. The prepare script splits them into hour, minute and second hands, each pointing at twelve with its pivot at the origin, so setting the time is one rotation about Z per hand.
 - Nearly every part of the source watch shares one material, so the prepared model carries none; assign materials per part in code. The bracelet's links are open shells and need a double-sided material.
 - The escapement ships with an animation named "Oscillating mechanism". Use it instead of animating the parts by hand.
+- The Hero Timepiece has two Stills on Home, both captures of the live scene. One is the opening of the arrival act, so the canvas can replace it without a visible change; the other is the watch arrived and lit, for wherever the 3D never comes. After changing the model, its materials, the lighting, the camera or the arrival act, run `npm run stills` and commit the result.
+- `three` is held at 0.182. From 0.183 it logs a deprecation warning for its `Clock` on every page load, because React Three Fiber 9 still uses it. Move up only together with a Fiber release that has dropped `Clock`.
+- The 3D scene draws on demand (`frameloop="demand"`): nothing is drawn until something calls `invalidate()`. Anything new that moves the watch must ask for a frame, as the act progress store and the look-around drag do.
+- The browser suite's Chromium has no graphics card and draws the scene in software. It is slow, and a screenshot taken there of a canvas that has since scrolled can come out blank; judge the 3D in a real browser.
 - `.claude/skills/` is git-ignored. On a fresh clone, restore the skills listed in `skills-lock.json` with the skills CLI.
 - scroll-craft's `scripts/kie.mjs` uploads to a paid image service. Never run it.
-- Use `min-h-[100dvh]`, not `h-screen`, for full-height sections; mobile browsers resize the viewport as their toolbars move.
+- Use `min-h-[100dvh]`, not `h-screen`, for full-height sections; mobile browsers resize the viewport as their toolbars move. The Stage and its Acts are the exception: they are sized in `lvh`, which never changes, because a canvas that resized mid-scroll would stutter. The first screen's copy is set in `svh` so it is in view with the toolbars out. The tokens in `globals.css` say which is which.
 - This repo's commits use Mohamed's GitHub no-reply address, set in local git config. Leave it, so his personal email stays out of the public history.
 - No em dash in visible copy, no "scroll" cue, no section counters, no invented statistics in counters (scroll-craft's hard rules).
 

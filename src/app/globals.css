@@ -54,6 +54,15 @@
   /* A full first screen: the viewport less the header, in dvh so it does not
      jump as a phone's toolbars show and hide. */
   --spacing-viewport: calc(100dvh - var(--spacing-header));
+  /* The Hero Timepiece's stage, pinned under the header while the 3D acts
+     scroll over it. It is sized in lvh, the viewport with a phone's toolbars
+     hidden, which never changes: a canvas that resized mid-scroll would
+     stutter. Each act's length is a multiple of the stage. */
+  --spacing-stage: calc(100lvh - var(--spacing-header));
+  --spacing-act-arrival: calc(var(--spacing-stage) * 2);
+  /* The first screen as a phone shows it with its toolbars out, in svh, so
+     copy set at its foot is in view on arrival and never shifts. */
+  --spacing-first-screen: calc(100svh - var(--spacing-header));
   --container-page: 90rem;
   --container-measure: 34rem;
   --container-statement: 15ch;
@@ -72,6 +81,20 @@
   /* Motion: restrained. Things settle into place; nothing bounces. */
   --ease-*: initial;
   --ease-settle: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* The loading mark: the doubled baton, its two bars trading places. */
+  --animate-*: initial;
+  --animate-tick: tick 900ms var(--ease-settle) infinite alternate;
+  --animate-tock: tick 900ms var(--ease-settle) infinite alternate-reverse;
+
+  @keyframes tick {
+    from {
+      opacity: 0.25;
+    }
+    to {
+      opacity: 1;
+    }
+  }
 }
 
 /* Tokens Tailwind's theme has no namespace for, so they are plain custom

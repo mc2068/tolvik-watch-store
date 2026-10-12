@@ -34,12 +34,12 @@ export function Craftsmanship() {
             <DialTrack className="absolute top-10 left-1/2 w-dial-wide max-w-none -translate-x-1/2 lg:static lg:w-full lg:translate-x-0" />
           </div>
 
-          <h1
+          <h2
             id="craftsmanship-statement"
             className="relative mt-4 max-w-statement font-display text-display text-balance md:mt-8 lg:mt-0"
           >
             Made to be read in the dark.
-          </h1>
+          </h2>
           <p className="relative mt-8 max-w-measure text-lead text-platinum-dim md:mt-10">
             Tolvik makes steel watches in small numbers. Every dial is drawn
             for legibility first, because a northern winter leaves little light
