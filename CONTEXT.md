@@ -42,6 +42,10 @@ _Avoid_: Category, catalogue, range
 The moment where the Hero Timepiece separates into its component parts so the Shopper can see how it is built.
 _Avoid_: Breakdown, anatomy, disassembly
 
+**Part**:
+One of the seven named layers of the Hero Timepiece: crystal, hands, dial, dial base, case, crown and pushers, bracelet.
+_Avoid_: Component, piece, mesh
+
 **Demo Checkout**:
 A checkout that collects no payment and ends in a simulated order confirmation.
 _Avoid_: Fake checkout, mock payment, test checkout
