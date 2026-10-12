@@ -1,28 +1,15 @@
 import { useGLTF } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
 import { useEffect, useMemo } from "react";
-import { CanvasTexture, MathUtils, SRGBColorSpace } from "three";
+import { CanvasTexture, SRGBColorSpace } from "three";
 
 import {
   DIAL_WORDMARK_SIZE,
   drawDialWordmark,
 } from "@/components/three/dial-wordmark";
-import {
-  type Hand,
-  HAND_CAP,
-  HANDS,
-  HERO_MODEL,
-} from "@/components/three/hero-model";
+import { HAND_CAP, HANDS, HERO_MODEL } from "@/components/three/hero-model";
 import { createFinish } from "@/components/three/materials";
-
-// Where the hands stand until they follow the Shopper's clock: eight minutes
-// past ten, the pose that shows a dial at its clearest. Degrees clockwise
-// from twelve.
-const SHOWN_TIME: Record<Hand, number> = {
-  "hour-hand": 304,
-  "minute-hand": 52,
-  "second-hand": 222,
-};
+import { useClock } from "@/components/three/use-clock";
 
 // The wordmark sits on the dial between its centre and twelve o'clock, a
 // hair above the plate so the two surfaces never fight for the same pixel.
@@ -34,6 +21,7 @@ export function HeroTimepiece() {
   // (React's Suspense) until it is ready. The Draco decoder is switched off:
   // the model is meshopt-compressed and needs nothing fetched to decode it.
   const { nodes } = useGLTF(HERO_MODEL.main, false);
+  const handsPart = useClock();
 
   const finish = useMemo(() => createFinish(), []);
   useEffect(
@@ -46,14 +34,9 @@ export function HeroTimepiece() {
   return (
     <group>
       <primitive object={nodes.crystal} material={finish.crystal} />
-      <primitive object={nodes.hands}>
+      <primitive ref={handsPart} object={nodes.hands}>
         {HANDS.map((hand) => (
-          <primitive
-            key={hand}
-            object={nodes[hand]}
-            material={finish.hands}
-            rotation-z={-MathUtils.degToRad(SHOWN_TIME[hand])}
-          />
+          <primitive key={hand} object={nodes[hand]} material={finish.hands} />
         ))}
         <primitive object={nodes[HAND_CAP]} material={finish.hands} />
       </primitive>

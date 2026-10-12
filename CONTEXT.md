@@ -58,6 +58,10 @@ _Avoid_: Breakdown, anatomy, disassembly
 One of the seven named layers of the Hero Timepiece: crystal, hands, dial, dial base, case, crown and pushers, bracelet.
 _Avoid_: Component, piece, mesh
 
+**Clock**:
+What keeps the Hero Timepiece's hands on the Shopper's own local time, ticking once a second.
+_Avoid_: Timer, ticker
+
 **Demo Checkout**:
 A checkout that collects no payment and ends in a simulated order confirmation.
 _Avoid_: Fake checkout, mock payment, test checkout
