@@ -10,6 +10,7 @@ import {
 } from "react";
 
 import { HERO_STILL } from "@/components/three/hero-model";
+import { actProgress } from "@/lib/act-progress";
 
 // `next/dynamic` with `ssr: false` keeps the 3D code out of the server's HTML
 // and out of the page's first download: the browser fetches it only after
@@ -62,12 +63,19 @@ export function HeroStage() {
   );
   const [drawn, setDrawn] = useState(false);
   const [failed, setFailed] = useState(false);
+  // Whether the watch has begun to turn away. The act's progress changes on
+  // every frame; this reading of it changes once, as the turn act begins.
+  const turning = useSyncExternalStore(
+    actProgress.onChange,
+    () => actProgress.get("turn") > 0,
+    () => false,
+  );
 
   const live = supported === true && motionWelcome === true && !failed;
   const state = !live ? "still" : drawn ? "ready" : "loading";
 
   return (
-    <div className="absolute inset-x-0 top-0 h-3/5 lg:inset-y-0 lg:left-2/5 lg:h-auto">
+    <div className="watch-box">
       <div
         role="img"
         aria-label="The Tolvik watch in steel, with a deep blue dial"
@@ -106,7 +114,16 @@ export function HeroStage() {
             Loading the watch
           </>
         )}
-        {state === "ready" && "Drag to look around"}
+        {/* The invitation to drag is for the watch as it arrives. Once it
+            turns away the line steps aside: on a phone it would lie across
+            the open watch. */}
+        {state === "ready" && (
+          <span
+            className={`transition-opacity duration-(--duration-calm) ease-settle ${turning ? "opacity-0" : ""}`}
+          >
+            Drag to look around
+          </span>
+        )}
       </p>
     </div>
   );

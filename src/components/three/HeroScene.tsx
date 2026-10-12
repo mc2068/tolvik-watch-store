@@ -10,11 +10,20 @@ import {
   useRef,
   useState,
 } from "react";
-import { type DirectionalLight, type Group, MathUtils } from "three";
+import {
+  type DirectionalLight,
+  Euler,
+  type Group,
+  MathUtils,
+  Quaternion,
+} from "three";
 
 import { arrivalPose } from "@/components/three/arrival";
-import { containFov } from "@/components/three/framing";
+import { explodedViewPose } from "@/components/three/exploded-view";
+import { containFov, distanceToFit } from "@/components/three/framing";
 import { HeroTimepiece } from "@/components/three/HeroTimepiece";
+import { turnPose } from "@/components/three/turn";
+import { useExplodedView } from "@/components/three/use-exploded-view";
 import {
   type LookAround,
   useLookAround,
@@ -35,6 +44,37 @@ const PIVOT_DEPTH = 0.9;
 // How the finished watch rests once it has arrived: a little short of square
 // on, so the case shows its side, and tipped up slightly to the eye.
 const REST = { yaw: -0.38, pitch: 0.1 } as const;
+const RESTING = new Quaternion().setFromEuler(
+  new Euler(REST.pitch, REST.yaw, 0),
+);
+
+// How the turn act leaves it: in profile, the crown towards the Shopper,
+// just short of side on so the dial still catches the light.
+const PROFILE = { yaw: -1.36, pitch: 0.06 } as const;
+const IN_PROFILE = new Quaternion().setFromEuler(
+  new Euler(PROFILE.pitch, PROFILE.yaw, 0),
+);
+// The studio is lit for a watch that faces the Shopper, and a watch in
+// profile would show its side to the dark. So the studio turns with it, by
+// this much about the upright axis, until one of its tall strips stands
+// where the side of the case and the crown reflect it.
+const PROFILE_STUDIO_TURN = 1.5;
+
+// How it lies for the Exploded View: on its back, dial up, so its axis
+// stands upright on the Stage and the parts lift one above another. It is
+// tipped towards the Shopper, who looks down onto each part, and turned on
+// its axis to bring the crown round to the front.
+const LYING_TIP = 0.42;
+const LYING_TURN = -0.6;
+const LYING = new Quaternion().setFromEuler(
+  new Euler(LYING_TIP - Math.PI / 2, 0, LYING_TURN),
+);
+// Lying down, the watch also steps back and aside. The open layout, with the
+// parts' names to its right, is this big in model units, far more than the
+// watch, and must be seen whole on any Stage; the watch's axis stands left
+// of its middle, to leave the names their room.
+const OPEN_WATCH = { width: 4.3, height: 5.3 } as const;
+const LYING_PLACE = { x: -0.6, y: -0.1 } as const;
 
 const KEY_LIGHT = 1.4;
 
@@ -157,7 +197,7 @@ function Studio() {
 }
 
 /**
- * Poses the watch every frame from the act's progress and the Shopper's
+ * Poses the watch every frame from the acts' progress and the Shopper's
  * drag, and brings the light up with it.
  */
 function Pose({
@@ -167,15 +207,22 @@ function Pose({
   lookAround: RefObject<LookAround>;
   children: ReactNode;
 }) {
+  // Two groups, one inside the other. The outer one is the stand: where the
+  // watch is, and the Shopper's drag, which always turns it about the
+  // Stage's own upright and level axes. The inner one is how the acts hold
+  // the watch on that stand.
+  const stand = useRef<Group>(null);
   const watch = useRef<Group>(null);
   const keyLight = useRef<DirectionalLight>(null);
   const look = useRef<LookAround>({ yaw: 0, pitch: 0 });
+  const [arrived] = useState(() => new Euler());
+  const explode = useExplodedView(watch);
 
   // Draw a frame whenever scroll moves an act.
   useEffect(() => actProgress.onChange(() => invalidate()), []);
 
-  useFrame(({ scene }, delta) => {
-    if (!watch.current || !keyLight.current) return;
+  useFrame(({ scene, camera, size, gl }, delta) => {
+    if (!stand.current || !watch.current || !keyLight.current) return;
 
     // After a pause the gap since the last frame is long; cap it so the
     // first frame of a drag eases in and does not snap.
@@ -189,22 +236,46 @@ function Pose({
       Math.abs(now.pitch - goal.pitch) > CLOSE_ENOUGH;
     if (settling) invalidate();
 
-    const pose = arrivalPose(actProgress.get("arrival"));
-    watch.current.rotation.set(
-      REST.pitch + pose.pitch + now.pitch,
-      REST.yaw + pose.yaw + now.yaw,
-      0,
+    const arrival = arrivalPose(actProgress.get("arrival"));
+    const { turned } = turnPose(actProgress.get("turn"));
+    const { laid, apart, risen } = explodedViewPose(
+      actProgress.get("exploded-view"),
     );
-    watch.current.position.z = -pose.depth;
-    scene.environmentIntensity = pose.light;
-    keyLight.current.intensity = KEY_LIGHT * pose.light;
+
+    // A slerp is the shortest turn from one way of holding the watch to
+    // another. The acts chain three: round to the profile, down onto its
+    // back, and up again to rest.
+    arrived.set(REST.pitch + arrival.pitch, REST.yaw + arrival.yaw, 0);
+    watch.current.quaternion
+      .setFromEuler(arrived)
+      .slerp(IN_PROFILE, turned)
+      .slerp(LYING, laid)
+      .slerp(RESTING, risen);
+
+    const lying = laid * (1 - risen);
+    const lyingDepth =
+      distanceToFit(OPEN_WATCH, LENS, size.width / size.height) -
+      CAMERA_DISTANCE;
+    stand.current.position.set(
+      LYING_PLACE.x * lying,
+      LYING_PLACE.y * lying,
+      -arrival.depth - lyingDepth * lying,
+    );
+    stand.current.rotation.set(now.pitch, now.yaw, 0);
+    scene.environmentIntensity = arrival.light;
+    scene.environmentRotation.y = PROFILE_STUDIO_TURN * turned * (1 - laid);
+    keyLight.current.intensity = KEY_LIGHT * arrival.light;
+
+    explode(apart, camera, gl.domElement);
   });
 
   return (
     <>
       <directionalLight ref={keyLight} position={[-3, 5, 6]} intensity={0} />
-      <group ref={watch}>
-        <group position-z={PIVOT_DEPTH}>{children}</group>
+      <group ref={stand}>
+        <group ref={watch}>
+          <group position-z={PIVOT_DEPTH}>{children}</group>
+        </group>
       </group>
     </>
   );

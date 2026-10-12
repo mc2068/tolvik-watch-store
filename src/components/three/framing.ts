@@ -13,3 +13,21 @@ export function containFov(reference: number, aspect: number): number {
   const halfAngle = Math.atan(Math.tan((reference * Math.PI) / 360) / aspect);
   return (halfAngle * 360) / Math.PI;
 }
+
+/**
+ * How far from the camera something `width` by `height`, in model units,
+ * must stand to be seen whole on a stage of the given aspect. The camera
+ * keeps the square of its `reference` lens in view, so a wide stage sees
+ * further to the sides and a tall one further up and down.
+ */
+export function distanceToFit(
+  { width, height }: { width: number; height: number },
+  reference: number,
+  aspect: number,
+): number {
+  const square = Math.max(
+    width / Math.max(1, aspect),
+    height * Math.min(1, aspect),
+  );
+  return square / (2 * Math.tan((reference * Math.PI) / 360));
+}

@@ -1,13 +1,8 @@
 "use client";
 
-import { useGSAP } from "@gsap/react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useRef } from "react";
 
-import { actProgress } from "@/lib/act-progress";
-
-gsap.registerPlugin(useGSAP, ScrollTrigger);
+import { useActScore } from "@/components/home/use-act-score";
 
 /**
  * The arrival act: the first screen of Home. Its copy is ordinary text that
@@ -17,52 +12,19 @@ export function Arrival() {
   const act = useRef<HTMLElement>(null);
   const copy = useRef<HTMLDivElement>(null);
 
-  // `useGSAP` is GSAP's version of `useEffect`: it runs once the section is
-  // on the page and undoes everything it set up when the section leaves.
-  // A Shopper who prefers reduced motion gets none of it: the copy stays put
-  // and the Stage shows a Still.
-  useGSAP(() => {
-    const motion = gsap.matchMedia();
-
-    motion.add("(prefers-reduced-motion: no-preference)", () => {
-      // The act's score. ScrollTrigger moves `played` from 0 to 1 over the
-      // act's length, a little behind the Shopper's hand so a notched mouse
-      // wheel still reads as one movement, and plays it backwards on the way
-      // up. The value goes to the scene's store, never into React state.
-      const played = { progress: 0 };
-
-      gsap
-        .timeline({
-          defaults: { ease: "none" },
-          scrollTrigger: {
-            trigger: act.current,
-            // The act opens the page, so it starts at the very top and ends
-            // when its last line reaches the foot of the screen.
-            start: 0,
-            end: "bottom bottom",
-            scrub: 0.5,
-          },
-        })
-        // The watch has arrived four fifths of the way through, and holds
-        // there for the rest, so it is seen at rest before the Stage leaves.
-        .to(played, {
-          progress: 1,
-          duration: 0.8,
-          onUpdate: () => actProgress.set("arrival", played.progress),
-        })
-        // The copy gives way to the watch before it has scrolled off.
-        .to(copy.current, { opacity: 0, duration: 0.3 }, 0.1)
-        .set({}, {}, 1);
-
-      return () => actProgress.set("arrival", 0);
-    });
+  // The act opens the page, so it starts at the very top. The watch has
+  // arrived four fifths of the way through, and holds there for the rest, so
+  // it is seen at rest before it turns.
+  useActScore("arrival", act, { start: 0, over: 0.8 }, (score) => {
+    // The copy gives way to the watch before it has scrolled off.
+    score.to(copy.current, { opacity: 0, duration: 0.3 }, 0.1);
   });
 
   return (
     <section
       ref={act}
       aria-labelledby="arrival-headline"
-      className="h-act-arrival"
+      className="h-act-arrival motion-reduce:max-lg:h-stage"
     >
       <div
         ref={copy}

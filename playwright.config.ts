@@ -10,8 +10,10 @@ export default defineConfig({
   reporter: "list",
   // The test browser has no graphics card, so it draws the Hero Timepiece in
   // software, slowly, and several tests do so at once. Anything that waits
-  // on the 3D scene needs longer than the default five seconds.
+  // on the 3D scene needs longer than the default five seconds, and a test
+  // that waits on it more than once needs longer than the default thirty.
   expect: { timeout: 20_000 },
+  timeout: 60_000,
   use: {
     baseURL,
     trace: "retain-on-failure",

@@ -5,9 +5,13 @@
 // stutters. It lives here, outside components/three, so that Home can write
 // to it without loading any 3D code.
 
-export type Act = "arrival";
+export type Act = "arrival" | "turn" | "exploded-view";
 
-const progress: Record<Act, number> = { arrival: 0 };
+const progress: Record<Act, number> = {
+  arrival: 0,
+  turn: 0,
+  "exploded-view": 0,
+};
 const listeners = new Set<() => void>();
 
 export const actProgress = {
