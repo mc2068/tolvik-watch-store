@@ -1,0 +1,16 @@
+import { site } from "@/lib/site";
+
+// The Tolvik wordmark: the name in the display face behind a doubled baton,
+// the marker a watch dial carries at twelve o'clock.
+export function Wordmark() {
+  return (
+    <span className="inline-flex items-center gap-3.5 font-display text-body leading-none font-normal tracking-wordmark uppercase">
+      <span aria-hidden="true" className="flex gap-[3px]">
+        <span className="h-4 w-0.5 bg-steel" />
+        <span className="h-4 w-0.5 bg-steel" />
+      </span>
+      {/* The negative margin takes back the tracking after the last letter. */}
+      <span className="-mr-[0.34em]">{site.name}</span>
+    </span>
+  );
+}
