@@ -3,6 +3,12 @@
 // whole, the way `object-fit: contain` fits an image. A still rendered square
 // with the same lens therefore lines up with the live canvas at any size.
 
+// The camera: a long lens set well back, as a product photographer would
+// use, so the watch is not distorted. The lens angle is in degrees and the
+// distance in model units, where the case is 2 units across.
+export const LENS = 30;
+export const CAMERA_DISTANCE = 7.4;
+
 /**
  * The upright field of view, in degrees, that fits the square a `reference`
  * lens sees into a stage of the given aspect (width over height).

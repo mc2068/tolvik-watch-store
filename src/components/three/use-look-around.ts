@@ -10,7 +10,7 @@ export type LookAround = { yaw: number; pitch: number };
 /**
  * Lets the Shopper drag the watch to look around it. `asked` is where the
  * drag currently wants the watch; the frame loop eases towards it. Letting
- * go asks for nothing, so the watch settles back into the act's own pose.
+ * go asks for nothing, so the watch settles back into its Pose.
  * `handlers` go on the element the Shopper drags.
  */
 export function useLookAround(): {

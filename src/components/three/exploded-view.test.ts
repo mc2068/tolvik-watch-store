@@ -1,10 +1,6 @@
 import { describe, expect, test } from "vitest";
 
-import {
-  explodedViewPose,
-  partOffsets,
-  partSeparation,
-} from "@/components/three/exploded-view";
+import { partOffsets, partSeparation } from "@/components/three/exploded-view";
 import { PARTS } from "@/components/three/hero-model";
 
 const steps = Array.from({ length: 1001 }, (_, step) => step / 1000);
@@ -96,53 +92,6 @@ describe("how far each part has left its place", () => {
     expect(early.case).toBe(0);
     for (const part of PARTS) {
       expect(late[part]).toBeGreaterThanOrEqual(late.case);
-    }
-  });
-});
-
-describe("the Exploded View act", () => {
-  const moves = ["laid", "apart", "risen"] as const;
-
-  test("opens on the watch as the turn act left it", () => {
-    expect(explodedViewPose(0)).toEqual({ laid: 0, apart: 0, risen: 0 });
-  });
-
-  test("ends with the watch closed and risen to face the Shopper", () => {
-    expect(explodedViewPose(1)).toEqual({ laid: 1, apart: 0, risen: 1 });
-  });
-
-  test("holds its first and last pose outside the act", () => {
-    expect(explodedViewPose(-0.5)).toEqual(explodedViewPose(0));
-    expect(explodedViewPose(1.5)).toEqual(explodedViewPose(1));
-  });
-
-  test("comes apart only while the watch is lying down", () => {
-    for (const progress of steps) {
-      const pose = explodedViewPose(progress);
-      if (pose.apart > 0) {
-        expect(pose.laid).toBe(1);
-        expect(pose.risen).toBe(0);
-      }
-    }
-  });
-
-  test("stays fully apart long enough for the seven names to be read", () => {
-    const held = steps.filter((progress) => explodedViewPose(progress).apart === 1);
-
-    expect(held.length / steps.length).toBeGreaterThan(0.1);
-  });
-
-  test("never jumps, so scrolling back plays it in reverse", () => {
-    for (let i = 1; i < steps.length; i++) {
-      const [before, after] = [
-        explodedViewPose(steps[i - 1]),
-        explodedViewPose(steps[i]),
-      ];
-      // Each move runs from 0 to 1; a thousandth of the act is never more
-      // than a hundredth of one.
-      for (const move of moves) {
-        expect(Math.abs(after[move] - before[move])).toBeLessThan(0.01);
-      }
     }
   });
 });

@@ -1,7 +1,7 @@
-// The Exploded View: the Hero Timepiece lies down, lifts apart into its seven
-// parts along its own axis, and closes and rises again. Like the arrival, it
-// is made of pure functions of progress, so scrolling back up plays it in
-// reverse.
+// The Exploded View's layout: where the Hero Timepiece's seven parts go as
+// it lifts apart along its own axis. It is made of pure functions of
+// progress, so scrolling back up closes the watch the way it opened. How the
+// watch lies down for it, and when, is part of its Pose, in `pose.ts`.
 
 import { clamp01, swell, through } from "@/components/three/easing";
 import { type Part, PARTS } from "@/components/three/hero-model";
@@ -57,29 +57,8 @@ export function partOffsets(progress: number): Record<Part, number> {
   return offsets;
 }
 
-export type ExplodedViewPose = {
-  /** How far the watch has lain down, dial up: 0 as the turn left it, 1 flat. */
-  laid: number;
-  /** How far the layout has opened: the progress `partOffsets` takes. */
-  apart: number;
-  /** How far the closed watch has risen back to face the Shopper. */
-  risen: number;
-};
-
-// The act's score, as stretches of its progress. The moves follow one
-// another and never overlap: the watch is lying still while it is apart.
-const LAYS_DOWN = [0.02, 0.24] as const;
-const COMES_APART = [0.24, 0.5] as const;
-// Between the two, every part is out and named, and nothing moves. Home
-// reads when the watch closes, to have the act's statement gone by then.
+// The stretch of the Exploded View act over which the open watch closes
+// again. The rest of the act's score is with the Pose; this one is here
+// because Home reads it, to have the act's statement gone by then, and Home
+// must not load the 3D maths the Pose is worked out with.
 export const EXPLODED_VIEW_CLOSES = [0.64, 0.82] as const;
-const RISES = [0.82, 0.98] as const;
-
-export function explodedViewPose(progress: number): ExplodedViewPose {
-  return {
-    laid: swell(through(LAYS_DOWN, progress)),
-    apart: through(COMES_APART, progress) -
-      through(EXPLODED_VIEW_CLOSES, progress),
-    risen: swell(through(RISES, progress)),
-  };
-}
