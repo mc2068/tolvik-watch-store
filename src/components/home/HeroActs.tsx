@@ -4,6 +4,7 @@ import { HeroStage } from "@/components/home/HeroStage";
 import { Turn } from "@/components/home/Turn";
 import type { Timepiece } from "@/lib/catalogue";
 import { formatPrice } from "@/lib/price";
+import { timepiecePath } from "@/lib/site";
 
 /**
  * The 3D acts of Home. The Hero Timepiece's stage is sticky: it holds its
@@ -13,14 +14,7 @@ import { formatPrice } from "@/lib/price";
  * On Home the Timepiece is the Hero Timepiece. The studio plays the same
  * acts with each of the others, to photograph it.
  */
-export function HeroActs({
-  timepiece,
-  href,
-}: {
-  timepiece: Timepiece;
-  /** Where the call to action that closes the acts leads. */
-  href: string;
-}) {
+export function HeroActs({ timepiece }: { timepiece: Timepiece }) {
   return (
     <div>
       {/* A Shopper who prefers reduced motion keeps the Still beside the
@@ -38,7 +32,7 @@ export function HeroActs({
         <Turn />
         <ExplodedView
           price={formatPrice(timepiece.price)}
-          href={href}
+          href={timepiecePath(timepiece.slug)}
         />
       </div>
     </div>

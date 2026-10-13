@@ -12,3 +12,13 @@ export const site = {
     href: "https://github.com/mc2068",
   },
 } as const;
+
+/** The address of a Collection: its place on the Collection page. */
+export function collectionPath(slug: string): string {
+  return `/collection#${slug}`;
+}
+
+/** The address of a Timepiece's own page. */
+export function timepiecePath(slug: string): string {
+  return `/collection/${slug}`;
+}
