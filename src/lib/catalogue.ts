@@ -10,6 +10,7 @@
 // Node as well.
 
 import { collections } from "../data/collections.ts";
+import { colourways, defaultColourway } from "../data/colourways.ts";
 import { timepieces } from "../data/timepieces.ts";
 
 /** A named group of Timepieces presented together. */
@@ -63,6 +64,24 @@ export type Finish = {
 
 export type Steel = "bare" | "blackened";
 
+/**
+ * One combination of dial colour and bracelet in which the Hero Timepiece
+ * can be shown and bought.
+ */
+export type Colourway = {
+  slug: string;
+  /** The whole choice in words, as "Deep blue dial, brushed steel bracelet". */
+  name: string;
+  /** The name of its dial colour, which it shares with one other Colourway. */
+  dial: string;
+  /** The name of its bracelet, which it shares with two others. */
+  bracelet: string;
+  /** The Hero Timepiece's Finish in this Colourway. */
+  finish: Finish;
+  /** The Hero Timepiece in this Colourway, from the front. */
+  still: Still;
+};
+
 /** A fixed image of a Timepiece, served from `public`. */
 export type Still = {
   src: string;
@@ -103,4 +122,17 @@ export async function getHeroTimepiece(): Promise<Timepiece> {
   const hero = timepieces.find((timepiece) => timepiece.isHero);
   if (!hero) throw new Error("The Catalogue has no Hero Timepiece");
   return hero;
+}
+
+/** The Colourways the Hero Timepiece comes in. No other Timepiece has any. */
+export async function listColourways(): Promise<Colourway[]> {
+  return colourways;
+}
+
+/**
+ * The Colourway a Shopper is shown before they choose: the Hero Timepiece
+ * as it is listed.
+ */
+export async function getDefaultColourway(): Promise<Colourway> {
+  return defaultColourway;
 }

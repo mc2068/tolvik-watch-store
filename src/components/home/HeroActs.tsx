@@ -1,7 +1,7 @@
 import { Arrival } from "@/components/home/Arrival";
 import { ExplodedView } from "@/components/home/ExplodedView";
-import { HeroStage } from "@/components/home/HeroStage";
 import { Turn } from "@/components/home/Turn";
+import { LiveTimepiece } from "@/components/shop/LiveTimepiece";
 import type { Timepiece } from "@/lib/catalogue";
 import { formatPrice } from "@/lib/price";
 import { timepiecePath } from "@/lib/site";
@@ -21,7 +21,13 @@ export function HeroActs({ timepiece }: { timepiece: Timepiece }) {
           copy on a laptop. On a phone the copy would have to cross it, so
           there it leaves with the first screen. */}
       <div className="sticky top-header h-stage overflow-hidden motion-reduce:max-lg:static">
-        <HeroStage finish={timepiece.finish} still={timepiece.stills[0]} />
+        <div className="watch-box">
+          <LiveTimepiece
+            finish={timepiece.finish}
+            still={timepiece.stills[0]}
+            statusClassName="top-6 lg:top-auto lg:bottom-10"
+          />
+        </div>
       </div>
 
       {/* The acts are pulled up over the stage, so the first starts at the

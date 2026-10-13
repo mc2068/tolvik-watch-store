@@ -198,6 +198,81 @@
   }
 }
 
+/* The Hero Timepiece's frame on its own page: the square the camera composes
+   the watch in. It holds its place under the header while the copy beside
+   or under it scrolls, so the watch is in view as the Shopper chooses a
+   Colourway, and the page's black behind it covers what scrolls beneath.
+   It is never taller than the screen has room for: three fifths of the
+   first screen on a phone, and on a laptop all of it but the breadcrumb's
+   six rems above, so the whole watch is there before any scrolling. Both
+   are in svh, so that the canvas does not resize as a phone's toolbars
+   move. Where that is less than a square, the scene fits its own square
+   into what is left. */
+@utility watch-frame {
+  position: sticky;
+  top: var(--spacing-header);
+  aspect-ratio: 1;
+  max-height: calc(var(--spacing-first-screen) * 0.6);
+  background-color: var(--color-ink);
+
+  @variant lg {
+    max-height: calc(var(--spacing-first-screen) - 6rem);
+  }
+}
+
+/* One choice among a few, as the Colourway picker offers them: a quiet
+   outlined chip with its radio button laid over it, unseen, so a click or a
+   tap anywhere on the chip lands on the button. The chip shows what the
+   button knows: which is chosen, and which the keyboard is on. */
+@utility choice-chip {
+  position: relative;
+  display: flex;
+  height: 3rem;
+  align-items: center;
+  gap: 0.75rem;
+  border: 1px solid var(--color-line);
+  padding-inline: 1rem;
+  color: var(--color-platinum-dim);
+  font-size: var(--text-small);
+  letter-spacing: var(--tracking-open);
+  white-space: nowrap;
+  cursor: pointer;
+  transition-property: color, border-color;
+  transition-duration: var(--duration-quick);
+  transition-timing-function: var(--ease-settle);
+
+  & input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  &:hover {
+    border-color: var(--color-platinum-dim);
+  }
+
+  &:has(:checked) {
+    border-color: var(--color-platinum);
+    color: var(--color-platinum);
+  }
+
+  &:has(:focus-visible) {
+    outline: 2px solid var(--color-steel);
+    outline-offset: 4px;
+  }
+}
+
+/* The same chip around a choice of colour: a square of the colour alone. */
+@utility choice-swatch {
+  width: 3rem;
+  justify-content: center;
+  padding-inline: 0;
+}
+
 /* A link inside a sentence: underlined in the accent so it reads as a link
    without relying on colour alone. */
 @utility text-link {

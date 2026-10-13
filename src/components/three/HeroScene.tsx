@@ -24,7 +24,7 @@ import {
   type LookAround,
   useLookAround,
 } from "@/components/three/use-look-around";
-import { actProgress } from "@/lib/act-progress";
+import { type Act, actProgress } from "@/lib/act-progress";
 import type { Finish } from "@/lib/catalogue";
 import { token } from "@/lib/tokens";
 
@@ -40,17 +40,28 @@ const KEY_LIGHT = 1.4;
 const FOLLOW_RATE = 7;
 const CLOSE_ENOUGH = 0.0005;
 
+// The watch as the arrival act leaves it, which is where a page with no acts
+// holds it.
+const ARRIVED: Record<Act, number> = {
+  arrival: 1,
+  turn: 0,
+  "exploded-view": 0,
+};
+
 /**
  * The Hero Timepiece's scene: canvas, camera, studio and frame loop. It is
  * the default export so Home can load it on the client only, after the page.
  */
 export default function HeroScene({
   finish,
+  arrived,
   onReady,
   onLost,
 }: {
   /** The Finish the watch is made in. */
   finish: Finish;
+  /** Whether the watch is held arrived, and does not follow the acts. */
+  arrived: boolean;
   /** The watch has been drawn for the first time. */
   onReady: () => void;
   /** The browser has taken the scene's graphics memory back. */
@@ -78,7 +89,7 @@ export default function HeroScene({
       <Studio />
       <LostContext onLost={onLost} />
       <Suspense fallback={null}>
-        <Posed lookAround={lookAround.asked}>
+        <Posed arrived={arrived} lookAround={lookAround.asked}>
           <HeroTimepiece finish={finish} />
         </Posed>
         <FirstFrame onDrawn={onReady} />
@@ -161,9 +172,11 @@ function Studio() {
  * adds the Shopper's drag.
  */
 function Posed({
+  arrived,
   lookAround,
   children,
 }: {
+  arrived: boolean;
   lookAround: RefObject<LookAround>;
   children: ReactNode;
 }) {
@@ -196,11 +209,13 @@ function Posed({
     if (settling) invalidate();
 
     const pose = poseAt(
-      {
-        arrival: actProgress.get("arrival"),
-        turn: actProgress.get("turn"),
-        "exploded-view": actProgress.get("exploded-view"),
-      },
+      arrived
+        ? ARRIVED
+        : {
+            arrival: actProgress.get("arrival"),
+            turn: actProgress.get("turn"),
+            "exploded-view": actProgress.get("exploded-view"),
+          },
       size.width / size.height,
     );
 
