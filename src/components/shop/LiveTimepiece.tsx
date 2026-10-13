@@ -43,19 +43,29 @@ function subscribeToMotionPreference(onChange: () => void) {
 }
 
 /**
- * The Stage: where the Hero Timepiece stands on Home. It opens as a Still,
- * loads the 3D scene behind it, and swaps the two once the watch has been
- * drawn. A Shopper who prefers reduced motion, a browser that cannot draw
- * 3D and a scene that fails or is dropped all keep a Still.
+ * A Timepiece in real-time 3D, filling the box it is put in: Home's Stage,
+ * or the Hero Timepiece's frame on its own page. It opens as a Still, loads
+ * the 3D scene behind it, and swaps the two once the watch has been drawn. A
+ * Shopper who prefers reduced motion, a browser that cannot draw 3D and a
+ * scene that fails or is dropped all keep a Still.
  */
-export function HeroStage({
+export function LiveTimepiece({
   finish,
   still,
+  arrived = false,
+  statusClassName,
 }: {
   /** The Finish the watch is made in. */
   finish: Finish;
-  /** The Timepiece's Still: the watch arrived and lit. */
+  /** The Timepiece's Still in that Finish: the watch arrived and lit. */
   still: Still;
+  /**
+   * Whether the watch is held arrived and lit, on a page with no acts to
+   * bring it in. Left out, it follows the acts, as on Home.
+   */
+  arrived?: boolean;
+  /** Where in the box the line under the watch stands. */
+  statusClassName: string;
 }) {
   // `useSyncExternalStore` reads something that lives outside React. Its
   // third argument is the answer on the server and while the page hydrates,
@@ -83,8 +93,15 @@ export function HeroStage({
   const live = supported === true && motionWelcome === true && !failed;
   const state = !live ? "still" : drawn ? "ready" : "loading";
 
+  // Under a watch that has been drawn the Still is out of sight, so one for
+  // a Finish chosen there is not fetched: the Still shown stays as it was
+  // until it is wanted again. Setting state while rendering is how React
+  // has a component keep up with a prop; it renders again at once.
+  const [shown, setShown] = useState(still);
+  if (state !== "ready" && shown !== still) setShown(still);
+
   return (
-    <div className="watch-box">
+    <>
       <div
         role="img"
         aria-label={still.alt}
@@ -92,8 +109,9 @@ export function HeroStage({
         className="absolute inset-0"
       >
         <HeroStill
-          arrived={still.src}
-          awaiting3D={supported !== false && !failed}
+          arrivedSrc={shown.src}
+          // The acts open on a darker watch than the one that has arrived.
+          opensDark={!arrived && supported !== false && !failed}
           hidden={state === "ready"}
         />
 
@@ -104,6 +122,7 @@ export function HeroStage({
             >
               <HeroScene
                 finish={finish}
+                arrived={arrived}
                 onReady={() => setDrawn(true)}
                 onLost={() => setFailed(true)}
               />
@@ -114,7 +133,7 @@ export function HeroStage({
 
       <p
         role="status"
-        className="pointer-events-none absolute inset-x-0 top-6 flex items-center justify-center gap-3 text-small tracking-open text-platinum-dim lg:top-auto lg:bottom-10"
+        className={`pointer-events-none absolute inset-x-0 flex items-center justify-center gap-3 text-small tracking-open text-platinum-dim ${statusClassName}`}
       >
         {state === "loading" && (
           <>
@@ -136,25 +155,26 @@ export function HeroStage({
           </span>
         )}
       </p>
-    </div>
+    </>
   );
 }
 
 /**
- * The Still in the watch's place. There are two. A Shopper about to get the
- * 3D sees the opening frame of the arrival act, so that when the canvas
- * takes over only the hands move, from the Still's ten past ten to the
- * Shopper's own time. Everyone else sees the watch arrived and lit:
- * the browser picks it by itself when reduced motion is preferred, and
- * `awaiting3D` turns false when the 3D will never come.
+ * The Still in the watch's place. Where the acts bring the watch in there
+ * are two. A Shopper about to get the 3D sees the opening frame of the
+ * arrival act, so that when the canvas takes over only the hands move, from
+ * the Still's ten past ten to the Shopper's own time. Everyone else sees the
+ * watch arrived and lit: the browser picks it by itself when reduced motion
+ * is preferred, and `opensDark` is false when the 3D will never come, or
+ * will come already arrived.
  */
 function HeroStill({
-  arrived,
-  awaiting3D,
+  arrivedSrc,
+  opensDark,
   hidden,
 }: {
-  arrived: string;
-  awaiting3D: boolean;
+  arrivedSrc: string;
+  opensDark: boolean;
   hidden: boolean;
 }) {
   // `getImageProps` gives what `next/image` would put on its <img>: resized
@@ -170,11 +190,11 @@ function HeroStill({
       fetchPriority: "high",
     }).props;
   const opening = still(HERO_OPENING_STILL);
-  const fallback = still(arrived);
+  const fallback = still(arrivedSrc);
 
   return (
     <picture>
-      {awaiting3D && (
+      {opensDark && (
         <source
           media={MOTION_WELCOME}
           srcSet={opening.srcSet}

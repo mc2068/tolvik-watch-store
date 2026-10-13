@@ -33,7 +33,7 @@ How a Timepiece's surfaces are made: the colour of its dial, and whether the ste
 _Avoid_: Material, skin, style
 
 **Colourway**:
-One combination of dial colour and strap in which the Hero Timepiece can be shown and bought.
+One combination of dial colour and bracelet in which the Hero Timepiece can be shown and bought. There are three dial colours and two bracelets, so six Colourways; the default is the Hero Timepiece as it is listed.
 _Avoid_: Variant, option, configuration
 
 **Collection**:

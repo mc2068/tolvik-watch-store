@@ -2,8 +2,17 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { ColourwayChoice } from "@/components/shop/ColourwayChoice";
+import { ColourwayPicker } from "@/components/shop/ColourwayPicker";
 import { StillFrame } from "@/components/shop/StillFrame";
-import { getCollection, getTimepiece, listTimepieces } from "@/lib/catalogue";
+import { TimepieceInColourway } from "@/components/shop/TimepieceInColourway";
+import {
+  getCollection,
+  getDefaultColourway,
+  getTimepiece,
+  listColourways,
+  listTimepieces,
+} from "@/lib/catalogue";
 import { formatPrice } from "@/lib/price";
 import { collectionPath } from "@/lib/site";
 import { groupSpecifications } from "@/lib/specifications";
@@ -48,6 +57,18 @@ export default async function TimepiecePage({
   const collection = await getCollection(timepiece.collection);
   const [front, ...otherStills] = timepiece.stills;
 
+  const copy = (
+    <>
+      <h1 className="font-display text-display">{timepiece.name}</h1>
+      <p className="mt-4 font-display text-title md:mt-6">
+        {formatPrice(timepiece.price)}
+      </p>
+      <p className="mt-6 max-w-measure text-lead text-platinum-dim md:mt-8">
+        {timepiece.description}
+      </p>
+    </>
+  );
+
   return (
     <main className="page-frame pb-section">
       <nav aria-label="Breadcrumb" className="pt-8 pb-6 md:pt-10 md:pb-8">
@@ -73,40 +94,61 @@ export default async function TimepiecePage({
 
       {/* On a phone the Timepiece is seen first and read about under it. On
           a laptop the page is set as Home's Stage is: the copy in the left
-          two fifths, the watch in the right three, and the copy holds its
-          place while the Stills scroll past it. From a tablet's width up
-          the first Still is shown square, the whole of what the camera
-          took: upright it would be taller than the screen. */}
-      <div className="grid gap-y-8 lg:grid-cols-12 lg:gap-x-8">
-        <div className="lg:col-span-7 lg:col-start-6 lg:row-start-1">
-          <StillFrame
-            still={front}
-            sizes="(min-width: 64rem) 55vw, 100vw"
-            first
-            className="md:aspect-square"
-          />
-        </div>
+          two fifths, the watch in the right three. */}
+      {timepiece.isHero ? (
+        // The Hero Timepiece is here live, in place of its Stills, and the
+        // Shopper chooses its Colourway. It is the frame that holds its
+        // place, so the watch is in view while they choose. `ColourwayChoice`
+        // keeps the choice for the two parts of the page that need it: the
+        // picker, which sets it, and the watch, which is drawn in it.
+        <ColourwayChoice
+          colourways={await listColourways()}
+          initial={(await getDefaultColourway()).slug}
+        >
+          <div className="lg:grid lg:grid-cols-12 lg:gap-x-8">
+            <div className="watch-frame lg:col-span-7 lg:col-start-6 lg:row-start-1 lg:self-start">
+              <TimepieceInColourway />
+            </div>
 
-        <div className="lg:col-span-4 lg:col-start-1 lg:row-span-2 lg:row-start-1">
-          <div className="lg:sticky lg:top-header lg:pt-12">
-            <h1 className="font-display text-display">{timepiece.name}</h1>
-            <p className="mt-4 font-display text-title md:mt-6">
-              {formatPrice(timepiece.price)}
-            </p>
-            <p className="mt-6 max-w-measure text-lead text-platinum-dim md:mt-8">
-              {timepiece.description}
-            </p>
+            <div className="max-lg:mt-8 lg:col-span-4 lg:col-start-1 lg:row-start-1 lg:pt-12">
+              {copy}
+              <div className="mt-8 border-t border-line pt-8 md:mt-10">
+                <ColourwayPicker />
+              </div>
+            </div>
           </div>
-        </div>
+        </ColourwayChoice>
+      ) : (
+        // Every other Timepiece is shown in its Stills, and the copy holds
+        // its place while they scroll past it. From a tablet's width up the
+        // first Still is shown square, the whole of what the camera took:
+        // upright it would be taller than the screen.
+        <div className="grid gap-y-8 lg:grid-cols-12 lg:gap-x-8">
+          <div className="lg:col-span-7 lg:col-start-6 lg:row-start-1">
+            <StillFrame
+              still={front}
+              sizes="(min-width: 64rem) 55vw, 100vw"
+              first
+              className="md:aspect-square"
+            />
+          </div>
 
-        <ul className="grid grid-cols-2 gap-x-5 lg:col-span-7 lg:col-start-6 lg:row-start-2 lg:gap-x-8">
-          {otherStills.map((still) => (
-            <li key={still.view}>
-              <StillFrame still={still} sizes="(min-width: 64rem) 28vw, 50vw" />
-            </li>
-          ))}
-        </ul>
-      </div>
+          <div className="lg:col-span-4 lg:col-start-1 lg:row-span-2 lg:row-start-1">
+            <div className="lg:sticky lg:top-header lg:pt-12">{copy}</div>
+          </div>
+
+          <ul className="grid grid-cols-2 gap-x-5 lg:col-span-7 lg:col-start-6 lg:row-start-2 lg:gap-x-8">
+            {otherStills.map((still) => (
+              <li key={still.view}>
+                <StillFrame
+                  still={still}
+                  sizes="(min-width: 64rem) 28vw, 50vw"
+                />
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Seven specifications in three short groups, each a list of its
           own, so a Shopper looks for the group first and reads two or

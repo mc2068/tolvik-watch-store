@@ -1,5 +1,6 @@
 // Renders the Stills: three of each Timepiece in the Catalogue, one of each
-// view, and one more of the Hero Timepiece.
+// view, and more of the Hero Timepiece: its opening, and one from the front
+// in each Colourway.
 //
 //   public/stills/<name>.webp                   from the front: the watch
 //                                               arrived and lit
@@ -9,16 +10,20 @@
 //   public/stills/hero-timepiece-opening.webp   the opening of the arrival
 //                                               act, shown on Home until the
 //                                               3D is drawn
+//   public/stills/hero-timepiece-<colourway>.webp
+//                                               from the front, in that
+//                                               Colourway
 //
-// The Catalogue says where each Timepiece's Stills go. The Hero Timepiece's
-// are filed under `hero-timepiece`, and Home shows the one from the front
-// where there is no 3D.
+// The Catalogue says where each Still goes. The Hero Timepiece's are filed
+// under `hero-timepiece`, and Home shows the one from the front where there
+// is no 3D. That one is also its default Colourway's.
 //
 //   npm run stills
 //
 // Each Still is a photograph of the real thing. The script builds the site
 // with its studio open: a page that plays Home's 3D acts with any Timepiece,
-// in its own Finish. It serves that build, opens each Timepiece's studio in
+// in its own Finish, and another that plays them with the Hero Timepiece in
+// any Colourway. It serves that build, opens each studio in turn in
 // a headless browser, waits for the scene, scrolls to where the acts hold
 // the watch as each view wants it and captures the square the camera
 // composes the watch in. Rendered from the scene itself, the opening Still
@@ -27,7 +32,8 @@
 //
 // Like `npm run models` it runs offline, on a developer's machine, and its
 // outputs are committed. Run it again whenever the model, its materials, the
-// lighting, the camera, the acts or a Timepiece's Finish changes. It ends by
+// lighting, the camera, the acts, a Timepiece's Finish or a Colourway
+// changes. It ends by
 // building the site once more with the studio closed, so the build it leaves
 // in `.next` is the one a Shopper gets.
 
@@ -40,7 +46,7 @@ import { fileURLToPath } from "node:url";
 import { chromium } from "@playwright/test";
 
 import { HERO_OPENING_STILL } from "../src/components/three/hero-model.ts";
-import { listTimepieces } from "../src/lib/catalogue.ts";
+import { listColourways, listTimepieces } from "../src/lib/catalogue.ts";
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const nextCli = "node_modules/next/dist/bin/next";
@@ -214,8 +220,16 @@ function scrollThrough(page, { heading, progress }) {
   );
 }
 
-/** Photographs one Timepiece in its studio and writes its Stills. */
-async function photograph(browser, site, window, timepiece) {
+/**
+ * Photographs the watch in the studio at `address` and writes these Stills
+ * of it, and with `opening` the Still Home opens on as well.
+ */
+async function photograph(
+  browser,
+  site,
+  window,
+  { address, stills, opening = false },
+) {
   const page = await browser.newPage({
     viewport: window,
     deviceScaleFactor: DENSITY,
@@ -229,7 +243,7 @@ async function photograph(browser, site, window, timepiece) {
     Date.prototype.getMinutes = () => minutes;
     Date.prototype.getSeconds = () => seconds;
   }, SHOWN_TIME);
-  await page.goto(`${site.url}/studio/${timepiece.slug}`);
+  await page.goto(site.url + address);
   const figure = page.locator('[data-hero-timepiece="ready"]');
   await figure.waitFor({ timeout: 60_000 });
 
@@ -243,13 +257,9 @@ async function photograph(browser, site, window, timepiece) {
   });
   // The dial's wordmark is drawn once the display face has loaded.
   await page.evaluate(() => document.fonts.ready);
-  // Only Home opens on a Still that the canvas then replaces, and Home
-  // shows the Hero Timepiece.
-  if (timepiece.isHero) {
-    write(HERO_OPENING_STILL, await capture(page, figure));
-  }
+  if (opening) write(HERO_OPENING_STILL, await capture(page, figure));
 
-  for (const still of timepiece.stills) {
+  for (const still of stills) {
     const view = VIEWS[still.view];
     if (!view) throw new Error(`No way to photograph the view "${still.view}"`);
     await scrollThrough(page, view);
@@ -267,8 +277,25 @@ async function main() {
   try {
     const timepieces = await listTimepieces();
     const window = await fitWindow(browser, site, timepieces[0]);
+    const taken = new Set();
     for (const timepiece of timepieces) {
-      await photograph(browser, site, window, timepiece);
+      await photograph(browser, site, window, {
+        address: `/studio/${timepiece.slug}`,
+        stills: timepiece.stills,
+        // Only Home opens on a Still that the canvas then replaces, and
+        // Home shows the Hero Timepiece.
+        opening: timepiece.isHero,
+      });
+      for (const { src } of timepiece.stills) taken.add(src);
+    }
+    // The default Colourway is the Hero Timepiece as it is listed, so its
+    // Still has been taken already.
+    for (const { slug, still } of await listColourways()) {
+      if (taken.has(still.src)) continue;
+      await photograph(browser, site, window, {
+        address: `/studio/colourway/${slug}`,
+        stills: [still],
+      });
     }
   } finally {
     await browser.close();

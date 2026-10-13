@@ -18,7 +18,7 @@ import {
   LENS,
 } from "@/components/three/framing";
 import { HeroTimepiece } from "@/components/three/HeroTimepiece";
-import { poseAt } from "@/components/three/pose";
+import { ARRIVED, poseAt } from "@/components/three/pose";
 import { useExplodedView } from "@/components/three/use-exploded-view";
 import {
   type LookAround,
@@ -42,15 +42,19 @@ const CLOSE_ENOUGH = 0.0005;
 
 /**
  * The Hero Timepiece's scene: canvas, camera, studio and frame loop. It is
- * the default export so Home can load it on the client only, after the page.
+ * the default export so `LiveTimepiece` can load it on the client only,
+ * after the page.
  */
 export default function HeroScene({
   finish,
+  arrived,
   onReady,
   onLost,
 }: {
   /** The Finish the watch is made in. */
   finish: Finish;
+  /** Whether the watch is held arrived, and does not follow the acts. */
+  arrived: boolean;
   /** The watch has been drawn for the first time. */
   onReady: () => void;
   /** The browser has taken the scene's graphics memory back. */
@@ -78,7 +82,7 @@ export default function HeroScene({
       <Studio />
       <LostContext onLost={onLost} />
       <Suspense fallback={null}>
-        <Posed lookAround={lookAround.asked}>
+        <Posed arrived={arrived} lookAround={lookAround.asked}>
           <HeroTimepiece finish={finish} />
         </Posed>
         <FirstFrame onDrawn={onReady} />
@@ -161,9 +165,11 @@ function Studio() {
  * adds the Shopper's drag.
  */
 function Posed({
+  arrived,
   lookAround,
   children,
 }: {
+  arrived: boolean;
   lookAround: RefObject<LookAround>;
   children: ReactNode;
 }) {
@@ -196,11 +202,13 @@ function Posed({
     if (settling) invalidate();
 
     const pose = poseAt(
-      {
-        arrival: actProgress.get("arrival"),
-        turn: actProgress.get("turn"),
-        "exploded-view": actProgress.get("exploded-view"),
-      },
+      arrived
+        ? ARRIVED
+        : {
+            arrival: actProgress.get("arrival"),
+            turn: actProgress.get("turn"),
+            "exploded-view": actProgress.get("exploded-view"),
+          },
       size.width / size.height,
     );
 

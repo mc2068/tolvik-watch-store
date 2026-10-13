@@ -5,9 +5,11 @@ import { expect, test } from "vitest";
 
 import {
   getCollection,
+  getDefaultColourway,
   getHeroTimepiece,
   getTimepiece,
   listCollections,
+  listColourways,
   listTimepieces,
 } from "@/lib/catalogue";
 
@@ -66,6 +68,32 @@ test("the six Timepieces come in six Finishes", async () => {
   expect(new Set(finishes).size).toBe(6);
 });
 
+test("the Hero Timepiece comes in six Colourways: three dial colours, each on two bracelets", async () => {
+  const colourways = await listColourways();
+
+  expect(colourways).toHaveLength(6);
+  expect(new Set(colourways.map(({ dial }) => dial)).size).toBe(3);
+  expect(new Set(colourways.map(({ bracelet }) => bracelet))).toEqual(
+    new Set(["Brushed steel", "Blackened steel"]),
+  );
+  // No two are the same choice, and each has a slug and a name of its own.
+  for (const key of ["slug", "name"] as const) {
+    expect(new Set(colourways.map((colourway) => colourway[key])).size).toBe(6);
+  }
+  expect(
+    new Set(colourways.map(({ dial, bracelet }) => `${dial} on ${bracelet}`))
+      .size,
+  ).toBe(6);
+});
+
+test("the default Colourway is the Hero Timepiece as it is listed", async () => {
+  const hero = await getHeroTimepiece();
+  const chosen = await getDefaultColourway();
+
+  expect(await listColourways()).toContain(chosen);
+  expect(chosen.finish).toEqual(hero.finish);
+});
+
 // This one reads the committed files that `npm run stills` writes, so a new
 // Timepiece without its photograph fails here.
 test("every Timepiece has three Stills, and every Still is a committed file", async () => {
@@ -82,4 +110,19 @@ test("every Timepiece has three Stills, and every Still is a committed file", as
       expect(alt, src).toContain(name);
     }
   }
+});
+
+test("every Colourway has a Still of its own from the front, a committed file", async () => {
+  const publicDir = fileURLToPath(new URL("../../public", import.meta.url));
+  const hero = await getHeroTimepiece();
+  const colourways = await listColourways();
+
+  expect(new Set(colourways.map(({ still }) => still.src)).size).toBe(6);
+  for (const { name, still } of colourways) {
+    expect(still.view, name).toBe("front");
+    expect(existsSync(publicDir + still.src), still.src).toBe(true);
+    expect(still.alt, name).toContain(hero.name);
+  }
+  // The default Colourway is the Hero Timepiece as a listing shows it.
+  expect((await getDefaultColourway()).still).toEqual(hero.stills[0]);
 });
