@@ -34,7 +34,7 @@ export function MainNavigation() {
         aria-expanded={open}
         aria-controls={listId}
         onClick={() => setOpen((wasOpen) => !wasOpen)}
-        className="-mr-3 h-11 px-3 text-small tracking-open text-platinum md:hidden"
+        className="h-11 px-3 text-small tracking-open text-platinum md:hidden"
       >
         {open ? "Close" : "Menu"}
       </button>

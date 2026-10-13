@@ -69,6 +69,8 @@
   --container-page: 90rem;
   --container-measure: 34rem;
   --container-statement: 15ch;
+  /* How wide the cart is, where the screen is wider than that. */
+  --container-cart: 28rem;
 
   /* The dial figure. On a laptop the whole dial stands beside the statement.
      Below that it is drawn wider than the screen, so only its top arc shows:
@@ -105,6 +107,9 @@
 :root {
   --duration-quick: 180ms;
   --duration-calm: 420ms;
+
+  /* How far the page is dimmed behind the cart: this much ink over it. */
+  --dimming: 0.72;
 
   /* Layers, lowest first. Nothing else on the site sets a z-index. */
   --layer-watch-frame: 1;
@@ -144,6 +149,14 @@
         var(--spacing-header) + var(--watch-frame-height)
       );
     }
+  }
+
+  /* While the cart is out, the page behind it does not scroll. The gutter
+     keeps the scrollbar's room, so nothing on the page shifts sideways as
+     the scrollbar goes and comes back. */
+  html:has(.cart-panel[open]) {
+    overflow: hidden;
+    scrollbar-gutter: stable;
   }
 
   body {
@@ -298,6 +311,61 @@
   width: 3rem;
   justify-content: center;
   padding-inline: 0;
+}
+
+/* The cart: a `<dialog>` the height of the screen, held at its right
+   edge, with the page dimmed behind it. A dialog opened as a modal is drawn
+   by the browser over everything else, so it needs no layer. It slides out
+   from beyond the edge and back: `@starting-style` is where it comes from
+   on opening, and `allow-discrete` holds it on screen, and over the page,
+   until it has slid back. The dimming fades with it. The browser's own
+   dialog is a centred box with a border, a margin and a size cap, all of
+   which are taken off here. */
+@utility cart-panel {
+  position: fixed;
+  inset: 0 0 0 auto;
+  width: min(100%, var(--container-cart));
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  margin: 0;
+  border: 0;
+  border-left: 1px solid var(--color-line);
+  padding: 0;
+  background-color: var(--color-ink);
+  color: var(--color-platinum);
+  translate: 100% 0;
+  transition-property: translate, display, overlay;
+  transition-duration: var(--duration-calm);
+  transition-timing-function: var(--ease-settle);
+  transition-behavior: allow-discrete;
+
+  &[open] {
+    display: flex;
+    flex-direction: column;
+    translate: 0 0;
+
+    @starting-style {
+      translate: 100% 0;
+    }
+  }
+
+  &::backdrop {
+    background-color: var(--color-ink);
+    opacity: 0;
+    transition-property: opacity, display, overlay;
+    transition-duration: var(--duration-calm);
+    transition-timing-function: var(--ease-settle);
+    transition-behavior: allow-discrete;
+  }
+
+  &[open]::backdrop {
+    opacity: var(--dimming);
+
+    @starting-style {
+      opacity: 0;
+    }
+  }
 }
 
 /* A link inside a sentence: underlined in the accent so it reads as a link

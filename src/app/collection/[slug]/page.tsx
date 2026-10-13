@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { AddToCart } from "@/components/shop/AddToCart";
+import { AddToCartInColourway } from "@/components/shop/AddToCartInColourway";
 import { ColourwayChoice } from "@/components/shop/ColourwayChoice";
 import { ColourwayPicker } from "@/components/shop/ColourwayPicker";
 import { StillFrame } from "@/components/shop/StillFrame";
@@ -115,6 +117,10 @@ export default async function TimepiecePage({
               <div className="mt-8 border-t border-line pt-8 md:mt-10">
                 <ColourwayPicker />
               </div>
+              <AddToCartInColourway
+                timepiece={timepiece.slug}
+                className="mt-8 md:mt-10"
+              />
             </div>
           </div>
         </ColourwayChoice>
@@ -134,7 +140,10 @@ export default async function TimepiecePage({
           </div>
 
           <div className="lg:col-span-4 lg:col-start-1 lg:row-span-2 lg:row-start-1">
-            <div className="lg:sticky lg:top-header lg:pt-12">{copy}</div>
+            <div className="lg:sticky lg:top-header lg:pt-12">
+              {copy}
+              <AddToCart timepiece={timepiece.slug} className="mt-8 md:mt-10" />
+            </div>
           </div>
 
           <ul className="grid grid-cols-2 gap-x-5 lg:col-span-7 lg:col-start-6 lg:row-start-2 lg:gap-x-8">
