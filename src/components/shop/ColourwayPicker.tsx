@@ -4,7 +4,7 @@ import { useId } from "react";
 
 import { useColourwayChoice } from "@/components/shop/ColourwayChoice";
 
-type Option = {
+type Chip = {
   name: string;
   /** The colour it is, where it is a colour, as a hex colour. */
   swatch?: string;
@@ -21,8 +21,8 @@ export function ColourwayPicker() {
 
   // Every Colourway is one dial colour on one bracelet, so the dials and
   // the bracelets to offer are the different ones among them.
-  const dials: Option[] = [];
-  const bracelets: Option[] = [];
+  const dials: Chip[] = [];
+  const bracelets: Chip[] = [];
   for (const { dial, bracelet, finish } of colourways) {
     if (!dials.some(({ name }) => name === dial)) {
       dials.push({ name: dial, swatch: finish.dial });
@@ -44,17 +44,20 @@ export function ColourwayPicker() {
       <h2 id={heading} className="text-small tracking-open text-platinum-dim">
         Colourway
       </h2>
-      <p className="mt-1 font-display text-lead">{chosen.name}</p>
+      {/* `aria-live` has a screen reader say the new name when it changes. */}
+      <p aria-live="polite" className="mt-1 font-display text-lead">
+        {chosen.name}
+      </p>
 
-      <Options
+      <Chips
         legend="Dial"
-        options={dials}
+        chips={dials}
         chosen={chosen.dial}
         onChoose={(dial) => chooseBy(dial, chosen.bracelet)}
       />
-      <Options
+      <Chips
         legend="Bracelet"
-        options={bracelets}
+        chips={bracelets}
         chosen={chosen.bracelet}
         onChoose={(bracelet) => chooseBy(chosen.dial, bracelet)}
       />
@@ -69,19 +72,19 @@ export function ColourwayPicker() {
  * chip, its button unseen over it. A colour is shown and not spelt out: its
  * name is there for a screen reader, and for a pointer that rests on it.
  */
-function Options({
+function Chips({
   legend,
-  options,
+  chips,
   chosen,
   onChoose,
 }: {
   legend: string;
-  options: Option[];
+  chips: Chip[];
   chosen: string;
   onChoose: (name: string) => void;
 }) {
-  // Radio buttons belong to one set by sharing a name, and a page may one
-  // day hold two pickers, so the name is one React makes up.
+  // Radio buttons belong to one set by sharing a name. `useId` has React
+  // make one up, so the two sets here can never share theirs.
   const set = useId();
 
   return (
@@ -90,7 +93,7 @@ function Options({
         {legend}
       </legend>
       <div className="mt-3 flex flex-wrap gap-3">
-        {options.map(({ name, swatch }) => (
+        {chips.map(({ name, swatch }) => (
           <label
             key={name}
             title={swatch && name}

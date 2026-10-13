@@ -93,6 +93,13 @@ export function LiveTimepiece({
   const live = supported === true && motionWelcome === true && !failed;
   const state = !live ? "still" : drawn ? "ready" : "loading";
 
+  // Under a watch that has been drawn the Still is out of sight, so one for
+  // a Finish chosen there is not fetched: the Still shown stays as it was
+  // until it is wanted again. Setting state while rendering is how React
+  // has a component keep up with a prop; it renders again at once.
+  const [shown, setShown] = useState(still);
+  if (state !== "ready" && shown !== still) setShown(still);
+
   return (
     <>
       <div
@@ -102,7 +109,7 @@ export function LiveTimepiece({
         className="absolute inset-0"
       >
         <HeroStill
-          arrived={still.src}
+          arrivedSrc={shown.src}
           // The acts open on a darker watch than the one that has arrived.
           opensDark={!arrived && supported !== false && !failed}
           hidden={state === "ready"}
@@ -162,11 +169,11 @@ export function LiveTimepiece({
  * will come already arrived.
  */
 function HeroStill({
-  arrived,
+  arrivedSrc,
   opensDark,
   hidden,
 }: {
-  arrived: string;
+  arrivedSrc: string;
   opensDark: boolean;
   hidden: boolean;
 }) {
@@ -183,7 +190,7 @@ function HeroStill({
       fetchPriority: "high",
     }).props;
   const opening = still(HERO_OPENING_STILL);
-  const fallback = still(arrived);
+  const fallback = still(arrivedSrc);
 
   return (
     <picture>

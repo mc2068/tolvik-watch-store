@@ -47,6 +47,8 @@ export function ColourwayChoice({
 
 /** The Shopper's choice of Colourway, anywhere inside a `ColourwayChoice`. */
 export function useColourwayChoice(): Choice {
+  // `use` reads the context's value, and renders the component again
+  // whenever the `ColourwayChoice` above it holds a new one.
   const choice = use(ChoiceContext);
   if (!choice) throw new Error("There is no Colourway to choose here");
   return choice;

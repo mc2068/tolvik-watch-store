@@ -18,13 +18,13 @@ import {
   LENS,
 } from "@/components/three/framing";
 import { HeroTimepiece } from "@/components/three/HeroTimepiece";
-import { poseAt } from "@/components/three/pose";
+import { ARRIVED, poseAt } from "@/components/three/pose";
 import { useExplodedView } from "@/components/three/use-exploded-view";
 import {
   type LookAround,
   useLookAround,
 } from "@/components/three/use-look-around";
-import { type Act, actProgress } from "@/lib/act-progress";
+import { actProgress } from "@/lib/act-progress";
 import type { Finish } from "@/lib/catalogue";
 import { token } from "@/lib/tokens";
 
@@ -40,17 +40,10 @@ const KEY_LIGHT = 1.4;
 const FOLLOW_RATE = 7;
 const CLOSE_ENOUGH = 0.0005;
 
-// The watch as the arrival act leaves it, which is where a page with no acts
-// holds it.
-const ARRIVED: Record<Act, number> = {
-  arrival: 1,
-  turn: 0,
-  "exploded-view": 0,
-};
-
 /**
  * The Hero Timepiece's scene: canvas, camera, studio and frame loop. It is
- * the default export so Home can load it on the client only, after the page.
+ * the default export so `LiveTimepiece` can load it on the client only,
+ * after the page.
  */
 export default function HeroScene({
   finish,

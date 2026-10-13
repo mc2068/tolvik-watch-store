@@ -1,7 +1,7 @@
 import { expect, type Page, test } from "@playwright/test";
 
 const picker = (page: Page) => page.getByRole("group", { name: "Colourway" });
-const option = (page: Page, name: string) =>
+const chip = (page: Page, name: string) =>
   picker(page).getByRole("radio", { name, exact: true });
 const named = (page: Page, colourway: string) =>
   picker(page).getByText(colourway, { exact: true });
@@ -17,21 +17,21 @@ test("choosing a Colourway changes the one that is named", async ({ page }) => {
   await expect(
     named(page, "Deep blue dial, brushed steel bracelet"),
   ).toBeVisible();
-  await expect(option(page, "Deep blue")).toBeChecked();
-  await expect(option(page, "Brushed steel")).toBeChecked();
+  await expect(chip(page, "Deep blue")).toBeChecked();
+  await expect(chip(page, "Brushed steel")).toBeChecked();
 
-  await option(page, "Rowan red").check();
+  await chip(page, "Rowan red").check();
   await expect(
     named(page, "Rowan red dial, brushed steel bracelet"),
   ).toBeVisible();
 
   // The bracelet is chosen apart from the dial, which stays as it was.
-  await option(page, "Blackened steel").check();
+  await chip(page, "Blackened steel").check();
   await expect(
     named(page, "Rowan red dial, blackened steel bracelet"),
   ).toBeVisible();
-  await expect(option(page, "Rowan red")).toBeChecked();
-  await expect(option(page, "Deep blue")).not.toBeChecked();
+  await expect(chip(page, "Rowan red")).toBeChecked();
+  await expect(chip(page, "Deep blue")).not.toBeChecked();
 });
 
 test("the picker offers three dial colours and two bracelets", async ({
@@ -59,19 +59,19 @@ test("a Shopper chooses a Colourway with the keyboard alone", async ({
   page,
 }) => {
   await page.goto("/collection/tjern");
-  await expect(option(page, "Deep blue")).toBeChecked();
+  await expect(chip(page, "Deep blue")).toBeChecked();
 
   // Tab reaches the dial that is chosen; the arrow keys move the choice.
   const onTheChosenDial = () =>
-    option(page, "Deep blue").evaluate((radio) => radio.matches(":focus"));
+    chip(page, "Deep blue").evaluate((radio) => radio.matches(":focus"));
   for (let presses = 0; presses < 20 && !(await onTheChosenDial()); presses++) {
     await page.keyboard.press("Tab");
   }
-  await expect(option(page, "Deep blue")).toBeFocused();
+  await expect(chip(page, "Deep blue")).toBeFocused();
   // The keyboard's place is shown on the chip, in the site's one focus ring.
   await expect
     .poll(() =>
-      option(page, "Deep blue").evaluate(
+      chip(page, "Deep blue").evaluate(
         (radio: HTMLInputElement) =>
           getComputedStyle(radio.labels![0]).outlineStyle,
       ),
@@ -79,14 +79,14 @@ test("a Shopper chooses a Colourway with the keyboard alone", async ({
     .toBe("solid");
 
   await page.keyboard.press("ArrowRight");
-  await expect(option(page, "Glacier blue")).toBeChecked();
+  await expect(chip(page, "Glacier blue")).toBeChecked();
   await expect(
     named(page, "Glacier blue dial, brushed steel bracelet"),
   ).toBeVisible();
 
   // One more Tab moves on to the bracelets.
   await page.keyboard.press("Tab");
-  await expect(option(page, "Brushed steel")).toBeFocused();
+  await expect(chip(page, "Brushed steel")).toBeFocused();
   await page.keyboard.press("ArrowRight");
   await expect(
     named(page, "Glacier blue dial, blackened steel bracelet"),
@@ -117,8 +117,8 @@ test("the Hero Timepiece's page shows it live, in place of its Stills", async ({
   await expect(heroTimepiece(page)).toHaveAccessibleName(
     "The Tjern in brushed steel, with a deep blue dial",
   );
-  await option(page, "Glacier blue").check();
-  await option(page, "Blackened steel").check();
+  await chip(page, "Glacier blue").check();
+  await chip(page, "Blackened steel").check();
   await expect(heroTimepiece(page)).toHaveAccessibleName(
     "The Tjern with a glacier blue dial and a blackened steel bracelet",
   );
@@ -142,10 +142,10 @@ test("a Shopper who prefers reduced motion sees each Colourway as a Still", asyn
   await expect(heroTimepiece(page).locator("canvas")).toHaveCount(0);
   await expect.poll(shown).toContain("hero-timepiece.webp");
 
-  await option(page, "Rowan red").check();
+  await chip(page, "Rowan red").check();
   await expect.poll(shown).toContain("hero-timepiece-rowan-red-brushed-steel");
 
-  await option(page, "Blackened steel").check();
+  await chip(page, "Blackened steel").check();
   await expect
     .poll(shown)
     .toContain("hero-timepiece-rowan-red-blackened-steel");
@@ -167,8 +167,8 @@ test.describe("at phone width", () => {
   }) => {
     await page.goto("/collection/tjern");
 
-    await option(page, "Blackened steel").scrollIntoViewIfNeeded();
-    await option(page, "Blackened steel").check();
+    await chip(page, "Blackened steel").scrollIntoViewIfNeeded();
+    await chip(page, "Blackened steel").check();
 
     await expect(
       named(page, "Deep blue dial, blackened steel bracelet"),
@@ -183,5 +183,36 @@ test.describe("at phone width", () => {
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth),
     ).toBe(390);
+  });
+
+  test("what scrolls beneath the watch stays beneath it", async ({ page }) => {
+    await page.goto("/collection/tjern");
+    await expect(page.getByRole("status")).toHaveText("Drag to look around");
+
+    // Scroll on until the dial colours have gone up under the watch's frame.
+    const frame = (await heroTimepiece(page).boundingBox())!;
+    const dial = (await chip(page, "Deep blue").boundingBox())!;
+    await page.mouse.wheel(0, dial.y - (frame.y + frame.height / 2));
+
+    // Whatever is on top where the dial colour is, is the watch.
+    await expect
+      .poll(() =>
+        chip(page, "Deep blue").evaluate((radio) => {
+          const { left, top, width, height } = radio.getBoundingClientRect();
+          const onTop = document.elementFromPoint(
+            left + width / 2,
+            top + height / 2,
+          );
+          return onTop?.closest("[data-hero-timepiece]") !== null;
+        }),
+      )
+      .toBe(true);
+    // And the watch is where it was held: right under the header.
+    const header = (await page.getByRole("banner").boundingBox())!;
+    expect((await heroTimepiece(page).boundingBox())!.y).toBeCloseTo(
+      header.y + header.height,
+      // Give or take the header's rule.
+      -1,
+    );
   });
 });

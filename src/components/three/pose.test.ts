@@ -12,7 +12,7 @@ import { beforeAll, describe, expect, test } from "vitest";
 
 import { CAMERA_DISTANCE, containFov, LENS } from "@/components/three/framing";
 import { HERO_MODEL, type Part, PARTS } from "@/components/three/hero-model";
-import { type Pose, poseAt } from "@/components/three/pose";
+import { ARRIVED, type Pose, poseAt } from "@/components/three/pose";
 
 // The Stage's shape, width over height, on a laptop.
 const LAPTOP = 1.6;
@@ -183,6 +183,15 @@ describe("through the Exploded View act", () => {
     expect(at(1, 1, 1)).toEqual(at(1));
     expect(apart(at(1, 1, 1))).toBe(false);
   });
+});
+
+test("a page with no acts holds the watch as the arrival act leaves it", () => {
+  const held = poseAt(ARRIVED, LAPTOP);
+
+  expect(held).toEqual(at(1));
+  expect(held.light).toBe(1);
+  expect(fromRest(held)).toBe(0);
+  expect(apart(held)).toBe(false);
 });
 
 test("each act holds its first and last Pose outside its range", () => {

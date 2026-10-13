@@ -58,11 +58,14 @@ export const timepieces: Timepiece[] = [
     name: "Tjern",
     collection: "kyst",
     price: 6400,
+    // The Hero Timepiece comes in Colourways, so what is said of it here
+    // holds for every one of them. Its Finish is its default Colourway's.
     description:
-      "Named for the dark mountain lakes of the north. Brushed steel with a deep blue dial.",
+      "Named for the dark mountain lakes of the north. Brushed steel, with a dial and a bracelet of your choosing.",
     specifications: {
       ...inSteel,
-      dial: "Deep blue, with luminous batons and hands",
+      dial: "One of three colours, with luminous batons and hands",
+      bracelet: "Steel links, brushed or blackened, with a folding clasp",
     },
     finish: { dial: "#1b3352", case: "bare", bracelet: "bare" },
     // Home shows the first of these too, wherever the 3D never comes.

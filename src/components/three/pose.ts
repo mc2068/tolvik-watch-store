@@ -139,6 +139,16 @@ function explodedView(progress: number) {
   };
 }
 
+/**
+ * The acts as the arrival act leaves them: the watch at rest, facing the
+ * Shopper and fully lit. A page with no acts holds the watch here.
+ */
+export const ARRIVED: Record<Act, number> = {
+  arrival: 1,
+  turn: 0,
+  "exploded-view": 0,
+};
+
 // Kept between calls, so that working out a Pose makes nothing but the Pose.
 const tilt = new Euler();
 const held = new Quaternion();

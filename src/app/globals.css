@@ -107,6 +107,7 @@
   --duration-calm: 420ms;
 
   /* Layers, lowest first. Nothing else on the site sets a z-index. */
+  --layer-watch-frame: 1;
   --layer-header: 10;
 
   color-scheme: dark;
@@ -202,6 +203,8 @@
    the watch in. It holds its place under the header while the copy beside
    or under it scrolls, so the watch is in view as the Shopper chooses a
    Colourway, and the page's black behind it covers what scrolls beneath.
+   It has a layer of its own for that: the picker's chips are positioned
+   too, and would otherwise be drawn over the watch as they pass under it.
    It is never taller than the screen has room for: three fifths of the
    first screen on a phone, and on a laptop all of it but the breadcrumb's
    six rems above, so the whole watch is there before any scrolling. Both
@@ -213,6 +216,7 @@
   top: var(--spacing-header);
   aspect-ratio: 1;
   max-height: calc(var(--spacing-first-screen) * 0.6);
+  z-index: var(--layer-watch-frame);
   background-color: var(--color-ink);
 
   @variant lg {
