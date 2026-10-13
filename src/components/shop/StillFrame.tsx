@@ -3,9 +3,10 @@ import Image from "next/image";
 import type { Still } from "@/lib/catalogue";
 
 /**
- * A Still in an upright frame, with the watch in the middle of it. The
- * Still has the page's own black behind the watch, so nothing is drawn
- * around it: the watch stands on the page itself.
+ * A Still in its frame: upright, and cropped to put the watch in the middle
+ * of it, unless `className` gives it another shape. The Still has the page's
+ * own black behind the watch, so nothing is drawn around it: the watch
+ * stands on the page itself.
  */
 export function StillFrame({
   still,
@@ -18,7 +19,7 @@ export function StillFrame({
   sizes: string;
   /** Whether the Still opens its page, and so is fetched at once. */
   first?: boolean;
-  /** A shape for the frame other than its upright one. */
+  /** A shape for the frame other than its upright one, as `aspect-square`. */
   className?: string;
 }) {
   return (

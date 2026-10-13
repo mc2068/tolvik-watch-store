@@ -39,7 +39,10 @@ test("the seven specifications are set out in three named groups", () => {
       name: "The dial and bracelet",
       entries: [
         { label: "Dial", value: "Slate grey, with luminous batons and hands" },
-        { label: "Bracelet", value: "Brushed steel links with a folding clasp" },
+        {
+          label: "Bracelet",
+          value: "Brushed steel links with a folding clasp",
+        },
       ],
     },
   ]);

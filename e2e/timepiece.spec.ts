@@ -25,6 +25,24 @@ test("a Shopper opens a Timepiece from the Collection and goes back", async ({
   );
 });
 
+test("a Timepiece's page leads back to its own Collection", async ({
+  page,
+}) => {
+  await page.goto("/collection/lyng");
+
+  await page
+    .getByRole("navigation", { name: "Breadcrumb" })
+    .getByRole("link", { name: "Natt" })
+    .click();
+
+  await expect(page).toHaveURL("/collection#natt");
+  await expect(
+    page.getByRole("region", { name: "Natt" }).getByRole("heading", {
+      level: 2,
+    }),
+  ).toBeInViewport();
+});
+
 // Everything Tolvik makes, as the brief sets it out, and where each is found.
 const everyTimepiece = [
   { address: "/collection/tjern", name: "Tjern", price: "$6,400" },
@@ -58,7 +76,9 @@ test("a Timepiece's page shows it in several Stills", async ({ page }) => {
     await expect(still).toBeVisible();
     // The file arrived and decoded: a missing Still has no width of its own.
     await expect
-      .poll(() => still.evaluate((image: HTMLImageElement) => image.naturalWidth))
+      .poll(() =>
+        still.evaluate((image: HTMLImageElement) => image.naturalWidth),
+      )
       .toBeGreaterThan(0);
   }
 });
@@ -127,6 +147,7 @@ test("an address with no Timepiece says so and leads back to the Collection", as
   const response = await page.goto("/collection/a-watch-tolvik-never-made");
 
   expect(response?.status()).toBe(404);
+  await expect(page).toHaveTitle("No such Timepiece | Tolvik");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
     "Tolvik makes no such Timepiece.",
   );

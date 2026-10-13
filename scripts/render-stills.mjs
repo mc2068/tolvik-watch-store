@@ -57,15 +57,17 @@ const DENSITY = 2;
 // shows a dial at its clearest. The live watch shows the Shopper's own time.
 const SHOWN_TIME = { hours: 10, minutes: 8, seconds: 37 };
 
-// Where in the acts each view is photographed: how far through which act.
-// Each is a moment the act holds the watch still. The arrival act has brought
-// it to rest by four fifths of the way; the turn act holds its profile from
-// there on; and the Exploded View has every part out, and nothing moving,
-// between coming apart and closing.
+// Where in the acts each view is photographed: how far through which act,
+// the act named by the id of its heading on the page. Each is a moment the
+// act holds the watch still. The arrival act has brought it to rest by four
+// fifths of the way; the turn act holds its profile from there on; and the
+// Exploded View has every part out, and nothing moving, between coming apart
+// and closing. Those stretches are set in `pose.ts` and `exploded-view.ts`,
+// which Node cannot load: if they move, move these with them.
 const VIEWS = {
-  front: { act: "arrival-headline", progress: 1 },
-  profile: { act: "turn-heading", progress: 0.9 },
-  exploded: { act: "exploded-view-heading", progress: 0.57 },
+  front: { heading: "arrival-headline", progress: 1 },
+  profile: { heading: "turn-heading", progress: 0.9 },
+  exploded: { heading: "exploded-view-heading", progress: 0.57 },
 };
 
 /** Builds the site, with the studio open or, as it is deployed, closed. */
@@ -191,21 +193,24 @@ async function fitWindow(browser, site, timepiece) {
 }
 
 /**
- * Scrolls to where an act is `progress` of the way through. The act is named
- * by its heading. It ends when the foot of its section reaches the foot of
- * the screen; the arrival act begins at the top of the page, and each of the
- * others as its section comes onto the screen.
+ * Scrolls to where an act is `progress` of the way through. The act is the
+ * section its heading names. It ends when the foot of its section reaches
+ * the foot of the screen; the arrival act begins at the top of the page, and
+ * each of the others as its section comes onto the screen.
  */
-function scrollThrough(page, { act, progress }) {
+function scrollThrough(page, { heading, progress }) {
   return page.evaluate(
-    ({ act, progress }) => {
-      const section = document.querySelector(`section[aria-labelledby="${act}"]`);
+    ({ heading, progress }) => {
+      const section = document.querySelector(
+        `section[aria-labelledby="${heading}"]`,
+      );
+      if (!section) throw new Error(`No act is headed by #${heading}`);
       const { top, bottom } = section.getBoundingClientRect();
       const ends = bottom + window.scrollY - window.innerHeight;
       const begins = Math.max(0, top + window.scrollY - window.innerHeight);
       window.scrollTo(0, begins + progress * (ends - begins));
     },
-    { act, progress },
+    { heading, progress },
   );
 }
 
@@ -245,7 +250,9 @@ async function photograph(browser, site, window, timepiece) {
   }
 
   for (const still of timepiece.stills) {
-    await scrollThrough(page, VIEWS[still.view]);
+    const view = VIEWS[still.view];
+    if (!view) throw new Error(`No way to photograph the view "${still.view}"`);
+    await scrollThrough(page, view);
     write(still.src, await capture(page, figure));
   }
 

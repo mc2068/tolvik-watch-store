@@ -1,35 +1,24 @@
 import type { Specifications } from "@/lib/catalogue";
 
 // How a Timepiece's page sets out its specifications: three short groups a
-// Shopper can scan, in place of one list of seven. Every specification is
-// named in exactly one of them.
-const GROUPS = [
-  {
-    name: "The case",
-    specifications: [
-      ["case", "Case"],
-      ["crystal", "Crystal"],
-      ["waterResistance", "Water resistance"],
-    ],
-  },
-  {
-    name: "The movement",
-    specifications: [
-      ["movement", "Movement"],
-      ["powerReserve", "Power reserve"],
-    ],
-  },
-  {
-    name: "The dial and bracelet",
-    specifications: [
-      ["dial", "Dial"],
-      ["bracelet", "Bracelet"],
-    ],
-  },
-] as const satisfies {
-  name: string;
-  specifications: (readonly [keyof Specifications, string])[];
-}[];
+// Shopper can scan, in place of one list of seven.
+const GROUPS = ["The case", "The movement", "The dial and bracelet"] as const;
+
+// Which group each specification is shown in and what it is called there,
+// in the order a group lists them. It is a record of every specification,
+// so one added to the Catalogue will not compile until it has a place here.
+const SHOWN: Record<
+  keyof Specifications,
+  { group: (typeof GROUPS)[number]; label: string }
+> = {
+  case: { group: "The case", label: "Case" },
+  crystal: { group: "The case", label: "Crystal" },
+  waterResistance: { group: "The case", label: "Water resistance" },
+  movement: { group: "The movement", label: "Movement" },
+  powerReserve: { group: "The movement", label: "Power reserve" },
+  dial: { group: "The dial and bracelet", label: "Dial" },
+  bracelet: { group: "The dial and bracelet", label: "Bracelet" },
+};
 
 export type SpecificationGroup = {
   name: string;
@@ -40,11 +29,18 @@ export type SpecificationGroup = {
 export function groupSpecifications(
   specifications: Specifications,
 ): SpecificationGroup[] {
-  return GROUPS.map((group) => ({
-    name: group.name,
-    entries: group.specifications.map(([specification, label]) => ({
-      label,
-      value: specifications[specification],
-    })),
+  const shown = Object.entries(SHOWN) as [
+    keyof Specifications,
+    (typeof SHOWN)[keyof Specifications],
+  ][];
+
+  return GROUPS.map((name) => ({
+    name,
+    entries: shown
+      .filter(([, { group }]) => group === name)
+      .map(([specification, { label }]) => ({
+        label,
+        value: specifications[specification],
+      })),
   }));
 }

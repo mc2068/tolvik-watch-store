@@ -51,7 +51,7 @@ The area of Home, held under the navigation, where the Hero Timepiece stays in v
 _Avoid_: Canvas, viewport, hero section
 
 **Still**:
-A fixed image of a Timepiece rendered from its 3D model, shown wherever the Timepiece is not in real-time 3D.
+A fixed image of a Timepiece rendered from its 3D model, shown wherever the Timepiece is not in real-time 3D. Each Timepiece has three, one of each view: from the front, in profile, and open in the Exploded View.
 _Avoid_: Screenshot, poster, placeholder
 
 **Exploded View**:

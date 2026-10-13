@@ -33,6 +33,7 @@ export default async function CollectionPage() {
         {collections.map((collection) => (
           <section
             key={collection.slug}
+            id={collection.slug}
             aria-labelledby={`${collection.slug}-heading`}
             className="border-t border-line pt-10 md:pt-14"
           >

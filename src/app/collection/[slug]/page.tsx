@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { StillFrame } from "@/components/shop/StillFrame";
 import { getCollection, getTimepiece, listTimepieces } from "@/lib/catalogue";
 import { formatPrice } from "@/lib/price";
+import { collectionPath } from "@/lib/site";
 import { groupSpecifications } from "@/lib/specifications";
 
 // A folder named in square brackets is a dynamic route: one page file that
@@ -59,7 +60,12 @@ export default async function TimepiecePage({
           {collection && (
             <li className="flex gap-x-3">
               <span aria-hidden="true">/</span>
-              {collection.name}
+              <Link
+                href={collectionPath(collection.slug)}
+                className="text-link"
+              >
+                {collection.name}
+              </Link>
             </li>
           )}
         </ol>
@@ -68,9 +74,9 @@ export default async function TimepiecePage({
       {/* On a phone the Timepiece is seen first and read about under it. On
           a laptop the page is set as Home's Stage is: the copy in the left
           two fifths, the watch in the right three, and the copy holds its
-          place while the Stills scroll past it. There the first Still is
-          shown square, the whole of what the camera took, so the watch is
-          all on the first screen. */}
+          place while the Stills scroll past it. From a tablet's width up
+          the first Still is shown square, the whole of what the camera
+          took: upright it would be taller than the screen. */}
       <div className="grid gap-y-8 lg:grid-cols-12 lg:gap-x-8">
         <div className="lg:col-span-7 lg:col-start-6 lg:row-start-1">
           <StillFrame
@@ -96,10 +102,7 @@ export default async function TimepiecePage({
         <ul className="grid grid-cols-2 gap-x-5 lg:col-span-7 lg:col-start-6 lg:row-start-2 lg:gap-x-8">
           {otherStills.map((still) => (
             <li key={still.view}>
-              <StillFrame
-                still={still}
-                sizes="(min-width: 64rem) 28vw, 50vw"
-              />
+              <StillFrame still={still} sizes="(min-width: 64rem) 28vw, 50vw" />
             </li>
           ))}
         </ul>
@@ -119,32 +122,30 @@ export default async function TimepiecePage({
           Specifications
         </h2>
         <div className="grid gap-x-8 gap-y-10 md:grid-cols-3 lg:col-span-7 lg:col-start-6">
-          {groupSpecifications(timepiece.specifications).map(
-            (group, index) => (
-              <div
-                key={group.name}
-                role="group"
-                aria-labelledby={`specifications-group-${index}`}
+          {groupSpecifications(timepiece.specifications).map((group, index) => (
+            <div
+              key={group.name}
+              role="group"
+              aria-labelledby={`specifications-group-${index}`}
+            >
+              <h3
+                id={`specifications-group-${index}`}
+                className="font-display text-lead"
               >
-                <h3
-                  id={`specifications-group-${index}`}
-                  className="font-display text-lead"
-                >
-                  {group.name}
-                </h3>
-                <dl className="mt-5 grid gap-y-5">
-                  {group.entries.map(({ label, value }) => (
-                    <div key={label}>
-                      <dt className="text-small tracking-open text-platinum-dim">
-                        {label}
-                      </dt>
-                      <dd className="mt-1">{value}</dd>
-                    </div>
-                  ))}
-                </dl>
-              </div>
-            ),
-          )}
+                {group.name}
+              </h3>
+              <dl className="mt-5 grid gap-y-5">
+                {group.entries.map(({ label, value }) => (
+                  <div key={label}>
+                    <dt className="text-small tracking-open text-platinum-dim">
+                      {label}
+                    </dt>
+                    <dd className="mt-1">{value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          ))}
         </div>
       </section>
     </main>
