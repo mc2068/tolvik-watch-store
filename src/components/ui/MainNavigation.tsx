@@ -45,12 +45,8 @@ export function MainNavigation() {
       >
         {site.navigation.map((item) => (
           <li key={item.href}>
-            {/* Next fetches a linked page ahead of the click. The Collection
-                page is not built yet, so that fetch would log a 404 on every
-                page; remove `prefetch={false}` once it exists. */}
             <Link
               href={item.href}
-              prefetch={false}
               onClick={() => setOpen(false)}
               className="block py-3 font-display text-title text-platinum transition-colors duration-(--duration-quick) ease-settle md:py-0 md:font-sans md:text-small md:font-normal md:tracking-open md:whitespace-nowrap md:text-platinum-dim md:hover:text-platinum"
             >

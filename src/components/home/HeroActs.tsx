@@ -2,17 +2,24 @@ import { Arrival } from "@/components/home/Arrival";
 import { ExplodedView } from "@/components/home/ExplodedView";
 import { HeroStage } from "@/components/home/HeroStage";
 import { Turn } from "@/components/home/Turn";
+import type { Timepiece } from "@/lib/catalogue";
 import { formatPrice } from "@/lib/price";
 
 /**
  * The 3D acts of Home. The Hero Timepiece's stage is sticky: it holds its
  * place under the header while the acts scroll over it, so one watch stays
  * on screen from the first act to the last, and leaves with the last.
+ *
+ * On Home the Timepiece is the Hero Timepiece. The studio plays the same
+ * acts with each of the others, to photograph it.
  */
 export function HeroActs({
-  heroTimepiece,
+  timepiece,
+  href,
 }: {
-  heroTimepiece: { price: number; href: string };
+  timepiece: Timepiece;
+  /** Where the call to action that closes the acts leads. */
+  href: string;
 }) {
   return (
     <div>
@@ -20,7 +27,7 @@ export function HeroActs({
           copy on a laptop. On a phone the copy would have to cross it, so
           there it leaves with the first screen. */}
       <div className="sticky top-header h-stage overflow-hidden motion-reduce:max-lg:static">
-        <HeroStage />
+        <HeroStage finish={timepiece.finish} still={timepiece.stills[0]} />
       </div>
 
       {/* The acts are pulled up over the stage, so the first starts at the
@@ -30,8 +37,8 @@ export function HeroActs({
         <Arrival />
         <Turn />
         <ExplodedView
-          price={formatPrice(heroTimepiece.price)}
-          href={heroTimepiece.href}
+          price={formatPrice(timepiece.price)}
+          href={href}
         />
       </div>
     </div>

@@ -1,24 +1,30 @@
-// Renders the two Stills that stand in for the Hero Timepiece on Home:
+// Renders the Stills: one of each Timepiece in the Catalogue, arrived and
+// lit, and one more of the Hero Timepiece.
 //
 //   public/stills/hero-timepiece-opening.webp   the opening of the arrival
-//                                               act, shown until the 3D is
-//                                               drawn
-//   public/stills/hero-timepiece.webp           the watch arrived and lit,
+//                                               act, shown on Home until the
+//                                               3D is drawn
+//   public/stills/hero-timepiece.webp           the Hero Timepiece arrived,
 //                                               shown where there is no 3D
+//   public/stills/<slug>.webp                   each other Timepiece arrived
 //
 //   npm run stills
 //
-// Each Still is a photograph of the real thing. The script serves the built
-// site, opens Home in a headless browser, waits for the scene and captures
-// the square the camera composes the watch in. Rendered from the scene
-// itself, the opening Still matches the canvas that replaces it in all but
-// the time on the dial.
+// Each Still is a photograph of the real thing. The script builds the site
+// with its studio open: a page that plays Home's 3D acts with any Timepiece,
+// in its own Finish. It serves that build, opens each Timepiece's studio in
+// a headless browser, waits for the scene and captures the square the camera
+// composes the watch in. Rendered from the scene itself, the opening Still
+// matches the canvas that replaces it on Home in all but the time on the
+// dial.
 //
 // Like `npm run models` it runs offline, on a developer's machine, and its
 // outputs are committed. Run it again whenever the model, its materials, the
-// lighting, the camera or the arrival act changes.
+// lighting, the camera, the arrival act or a Timepiece's Finish changes. It
+// ends by building the site once more with the studio closed, so the build
+// it leaves in `.next` is the one a Shopper gets.
 
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
 import path from "node:path";
@@ -26,9 +32,11 @@ import { fileURLToPath } from "node:url";
 
 import { chromium } from "@playwright/test";
 
-import { HERO_STILL } from "../src/components/three/hero-model.ts";
+import { HERO_OPENING_STILL } from "../src/components/three/hero-model.ts";
+import { listTimepieces } from "../src/lib/catalogue.ts";
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const nextCli = "node_modules/next/dist/bin/next";
 
 // Each Still is this many pixels square: enough for the widest laptop Stage
 // on a high-density screen. Next serves smaller copies to smaller screens.
@@ -41,6 +49,16 @@ const DENSITY = 2;
 // The time on the dial in every Still: eight minutes past ten, the pose that
 // shows a dial at its clearest. The live watch shows the Shopper's own time.
 const SHOWN_TIME = { hours: 10, minutes: 8, seconds: 37 };
+
+/** Builds the site, with the studio open or, as it is deployed, closed. */
+function buildSite({ studio }) {
+  const { status } = spawnSync(process.execPath, [nextCli, "build"], {
+    cwd: repo,
+    stdio: "inherit",
+    env: { ...process.env, TOLVIK_STUDIO: studio ? "1" : "" },
+  });
+  if (status !== 0) throw new Error("The site did not build.");
+}
 
 function freePort() {
   return new Promise((resolve, reject) => {
@@ -58,7 +76,7 @@ async function serveBuiltSite() {
   const url = `http://localhost:${port}`;
   const server = spawn(
     process.execPath,
-    ["node_modules/next/dist/bin/next", "start", "--port", String(port)],
+    [nextCli, "start", "--port", String(port)],
     { cwd: repo, stdio: ["ignore", "ignore", "inherit"] },
   );
 
@@ -72,10 +90,13 @@ async function serveBuiltSite() {
     await new Promise((resolve) => setTimeout(resolve, 200));
   }
   server.kill();
-  throw new Error("The built site did not start. Run `npm run build` first.");
+  throw new Error("The built site did not start.");
 }
 
-/** Captures the camera's square, the largest that fits the Stage. */
+/**
+ * Captures the camera's square, the largest that fits the Stage, once the
+ * watch in it has come to rest.
+ */
 async function capture(page, figure) {
   const stage = await figure.boundingBox();
   const side = Math.min(stage.width, stage.height);
@@ -84,14 +105,25 @@ async function capture(page, figure) {
       `The Stage's square is ${side * DENSITY}px, expected ${SIDE}px`,
     );
   }
-  const png = await page.screenshot({
-    clip: {
-      x: stage.x + (stage.width - side) / 2,
-      y: stage.y + (stage.height - side) / 2,
-      width: side,
-      height: side,
-    },
-  });
+  const clip = {
+    x: stage.x + (stage.width - side) / 2,
+    y: stage.y + (stage.height - side) / 2,
+    width: side,
+    height: side,
+  };
+
+  // The act eases the watch into place after the scroll that asked for it,
+  // and a browser drawing in software takes its time over each frame. So
+  // the square is photographed until three in a row come out alike: with
+  // the dial's time held, a watch at rest draws the same frame every time.
+  let png;
+  for (let alike = 0, attempt = 0; alike < 2; attempt++) {
+    if (attempt === 60) throw new Error("The watch never came to rest.");
+    await page.waitForTimeout(500);
+    const last = png;
+    png = await page.screenshot({ clip });
+    alike = last && png.equals(last) ? alike + 1 : 0;
+  }
 
   // The browser itself encodes the WebP, so the script needs no encoder.
   const webp = await page.evaluate(
@@ -120,60 +152,84 @@ function write(still, bytes) {
   console.log(`Wrote public${still} (${SIDE}px square, ${kb} KB)`);
 }
 
+/**
+ * The window to photograph in: laptop-wide, so its Stage is wider than it
+ * is tall and the camera's square is as tall as the Stage, and exactly tall
+ * enough for that square to be the size wanted. How tall that is depends on
+ * what stands above the Stage, so one studio is opened first to measure it.
+ *
+ * Every photograph is then taken in a window that opens at this size. A
+ * window resized with the page already in it would have the acts measured
+ * again, and when that falls while the arrival act is still easing the
+ * watch into place, the watch is left short of it.
+ */
+async function fitWindow(browser, site, timepiece) {
+  const window = { width: 1400, height: 900 };
+  const page = await browser.newPage({ viewport: window });
+  await page.goto(`${site.url}/studio/${timepiece.slug}`);
+  const stage = await page.locator("[data-hero-timepiece]").boundingBox();
+  await page.close();
+  return { ...window, height: window.height + SIDE / DENSITY - stage.height };
+}
+
+/** Photographs one Timepiece in its studio and writes its Stills. */
+async function photograph(browser, site, window, timepiece) {
+  const page = await browser.newPage({
+    viewport: window,
+    deviceScaleFactor: DENSITY,
+  });
+  // The watch reads the hour, minute and second off the page's clock, in
+  // `use-clock.ts`. Only those three readings are held: the clock itself
+  // must keep running, or the arrival act, which GSAP times by it, would
+  // never play.
+  await page.addInitScript(({ hours, minutes, seconds }) => {
+    Date.prototype.getHours = () => hours;
+    Date.prototype.getMinutes = () => minutes;
+    Date.prototype.getSeconds = () => seconds;
+  }, SHOWN_TIME);
+  await page.goto(`${site.url}/studio/${timepiece.slug}`);
+  const figure = page.locator('[data-hero-timepiece="ready"]');
+  await figure.waitFor({ timeout: 60_000 });
+
+  // Leave only the canvas on the page: no copy over it, no Still under it.
+  await page.addStyleTag({
+    content: `
+      body * { visibility: hidden !important; }
+      [data-hero-timepiece] canvas { visibility: visible !important; }
+      [data-hero-timepiece] * { opacity: 1 !important; transition: none !important; }
+    `,
+  });
+  // The dial's wordmark is drawn once the display face has loaded.
+  await page.evaluate(() => document.fonts.ready);
+  // Only Home opens on a Still that the canvas then replaces, and Home
+  // shows the Hero Timepiece.
+  if (timepiece.isHero) {
+    write(HERO_OPENING_STILL, await capture(page, figure));
+  }
+
+  // The arrival act is two Stages long and the Stage holds for it, so one
+  // Stage of scrolling plays the act to its end.
+  await page.evaluate((y) => window.scrollTo(0, y), SIDE / DENSITY);
+  write(timepiece.stills[0].src, await capture(page, figure));
+
+  await page.close();
+}
+
 async function main() {
+  buildSite({ studio: true });
   const site = await serveBuiltSite();
   const browser = await chromium.launch();
 
   try {
-    // A laptop-wide window. Its Stage is wider than it is tall, so the
-    // camera's square is as tall as the Stage; the window is then made
-    // exactly tall enough for that square to be the size wanted.
-    const page = await browser.newPage({
-      viewport: { width: 1400, height: 900 },
-      deviceScaleFactor: DENSITY,
-    });
-    // The watch reads the hour, minute and second off the page's clock, in
-    // `use-clock.ts`. Only those three readings are held: the clock itself
-    // must keep running, or the arrival act, which GSAP times by it, would
-    // never play.
-    await page.addInitScript(({ hours, minutes, seconds }) => {
-      Date.prototype.getHours = () => hours;
-      Date.prototype.getMinutes = () => minutes;
-      Date.prototype.getSeconds = () => seconds;
-    }, SHOWN_TIME);
-    await page.goto(site.url);
-    const figure = page.locator('[data-hero-timepiece="ready"]');
-    await figure.waitFor({ timeout: 60_000 });
-    const stage = await figure.boundingBox();
-    await page.setViewportSize({
-      width: 1400,
-      height: 900 + SIDE / DENSITY - stage.height,
-    });
-
-    // Leave only the canvas on the page: no copy over it, no Still under it.
-    await page.addStyleTag({
-      content: `
-        body * { visibility: hidden !important; }
-        [data-hero-timepiece] canvas { visibility: visible !important; }
-        [data-hero-timepiece] * { opacity: 1 !important; transition: none !important; }
-      `,
-    });
-    // The dial's wordmark is drawn once the display face has loaded.
-    await page.evaluate(() => document.fonts.ready);
-    await page.waitForTimeout(1000);
-    const opening = await capture(page, figure);
-
-    // The arrival act is two Stages long and the Stage holds for it, so one
-    // Stage of scrolling plays the act to its end.
-    await page.evaluate((y) => window.scrollTo(0, y), SIDE / DENSITY);
-    await page.waitForTimeout(2000);
-    const arrived = await capture(page, figure);
-
-    write(HERO_STILL.opening, opening);
-    write(HERO_STILL.arrived, arrived);
+    const timepieces = await listTimepieces();
+    const window = await fitWindow(browser, site, timepieces[0]);
+    for (const timepiece of timepieces) {
+      await photograph(browser, site, window, timepiece);
+    }
   } finally {
     await browser.close();
     site.stop();
+    buildSite({ studio: false });
   }
 }
 
