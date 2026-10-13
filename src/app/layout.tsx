@@ -22,8 +22,9 @@ const sans = Schibsted_Grotesk({
   variable: "--font-schibsted",
 });
 
+// A page that sets its own title has the site's name added after it.
 export const metadata: Metadata = {
-  title: site.name,
+  title: { default: site.name, template: `%s | ${site.name}` },
   description: site.description,
 };
 

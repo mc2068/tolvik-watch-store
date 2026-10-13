@@ -25,6 +25,7 @@ import {
   useLookAround,
 } from "@/components/three/use-look-around";
 import { actProgress } from "@/lib/act-progress";
+import type { Finish } from "@/lib/catalogue";
 import { token } from "@/lib/tokens";
 
 // The watch turns about the middle of its own depth, not about its dial, so
@@ -44,9 +45,12 @@ const CLOSE_ENOUGH = 0.0005;
  * the default export so Home can load it on the client only, after the page.
  */
 export default function HeroScene({
+  finish,
   onReady,
   onLost,
 }: {
+  /** The Finish the watch is made in. */
+  finish: Finish;
   /** The watch has been drawn for the first time. */
   onReady: () => void;
   /** The browser has taken the scene's graphics memory back. */
@@ -75,7 +79,7 @@ export default function HeroScene({
       <LostContext onLost={onLost} />
       <Suspense fallback={null}>
         <Posed lookAround={lookAround.asked}>
-          <HeroTimepiece />
+          <HeroTimepiece finish={finish} />
         </Posed>
         <FirstFrame onDrawn={onReady} />
       </Suspense>

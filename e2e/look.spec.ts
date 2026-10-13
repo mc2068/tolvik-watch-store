@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 // The pages that exist today. Add each new page here as it is built.
-const pages = ["/", "/an-address-that-does-not-exist"];
+const pages = ["/", "/collection", "/an-address-that-does-not-exist"];
 
 test("an unknown address says so and offers the way back Home", async ({
   page,
