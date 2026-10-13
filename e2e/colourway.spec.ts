@@ -216,3 +216,41 @@ test.describe("at phone width", () => {
     );
   });
 });
+
+test.describe("at tablet width", () => {
+  test.use({ viewport: { width: 820, height: 1180 } });
+
+  test("the watch's frame is as wide as the page's copy", async ({ page }) => {
+    await page.goto("/collection/tjern");
+
+    const frame = (await heroTimepiece(page).boundingBox())!;
+    const copy = (await picker(page).boundingBox())!;
+
+    expect(frame.x).toBe(copy.x);
+    expect(frame.width).toBe(copy.width);
+  });
+
+  test("a dial colour the keyboard comes back up to is not left under the watch", async ({
+    page,
+  }) => {
+    await page.goto("/collection/tjern");
+
+    // From the foot of the page, as Shift and Tab would come to it. The
+    // browser brings what is focused into view; the watch must not be on it.
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await chip(page, "Rowan red").focus();
+
+    await expect
+      .poll(() =>
+        chip(page, "Rowan red").evaluate((radio) => {
+          const { left, top, width, height } = radio.getBoundingClientRect();
+          return (
+            document.elementFromPoint(left + width / 2, top + height / 2) ===
+            radio
+          );
+        }),
+      )
+      .toBe(true);
+    await expect(heroTimepiece(page)).toBeInViewport({ ratio: 1 });
+  });
+});

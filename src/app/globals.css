@@ -110,6 +110,15 @@
   --layer-watch-frame: 1;
   --layer-header: 10;
 
+  /* How tall the Hero Timepiece's frame is on its own page, below a
+     laptop's width: as tall as the page's copy is wide, to be square, but
+     never more than three fifths of the first screen. In svh, so that the
+     canvas does not resize as a phone's toolbars move. */
+  --watch-frame-height: min(
+    100vw - 2 * var(--spacing-gutter),
+    var(--spacing-first-screen) * 0.6
+  );
+
   color-scheme: dark;
 }
 
@@ -123,6 +132,18 @@
   html {
     background-color: var(--color-ink);
     scroll-padding-top: var(--spacing-header);
+  }
+
+  /* Below a laptop's width the Hero Timepiece's frame is held across the
+     top of its page. Whatever the browser brings into view there, as it
+     does a control the keyboard has come to, must come to rest under the
+     frame's foot and not behind it. */
+  html:has(.watch-frame) {
+    @variant max-lg {
+      scroll-padding-top: calc(
+        var(--spacing-header) + var(--watch-frame-height)
+      );
+    }
   }
 
   body {
@@ -205,21 +226,23 @@
    Colourway, and the page's black behind it covers what scrolls beneath.
    It has a layer of its own for that: the picker's chips are positioned
    too, and would otherwise be drawn over the watch as they pass under it.
-   It is never taller than the screen has room for: three fifths of the
-   first screen on a phone, and on a laptop all of it but the breadcrumb's
-   six rems above, so the whole watch is there before any scrolling. Both
-   are in svh, so that the canvas does not resize as a phone's toolbars
-   move. Where that is less than a square, the scene fits its own square
-   into what is left. */
+   It is never taller than the screen has room for. Below a laptop's width
+   its height is a token, which the page's scroll padding shares. On a
+   laptop it is square, less whatever the first screen cannot hold under
+   the breadcrumb's six rems, so the whole watch is there before any
+   scrolling; its width is set, or a height held back would narrow it too.
+   Where it is not square, the scene fits its own square into the frame. */
 @utility watch-frame {
   position: sticky;
   top: var(--spacing-header);
-  aspect-ratio: 1;
-  max-height: calc(var(--spacing-first-screen) * 0.6);
+  height: var(--watch-frame-height);
   z-index: var(--layer-watch-frame);
   background-color: var(--color-ink);
 
   @variant lg {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
     max-height: calc(var(--spacing-first-screen) - 6rem);
   }
 }
