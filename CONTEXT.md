@@ -58,6 +58,10 @@ _Avoid_: Breakdown, anatomy, disassembly
 One of the seven named layers of the Hero Timepiece: crystal, hands, dial, dial base, case, crown and pushers, bracelet.
 _Avoid_: Component, piece, mesh
 
+**Pose**:
+How the Hero Timepiece is held at one moment of the Acts: which way it faces, where it stands on the Stage, how it is lit and how far each Part has left its place.
+_Avoid_: Transform, state, keyframe
+
 **Clock**:
 What keeps the Hero Timepiece's hands on the Shopper's own local time, ticking once a second.
 _Avoid_: Timer, ticker

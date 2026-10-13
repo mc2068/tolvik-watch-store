@@ -78,7 +78,7 @@ Do not invent new ones. For React Three Fiber, drei, Zustand and Next.js, read t
 - Pages (`src/app`): routing, metadata and page composition. Server components by default.
 - Catalogue (`src/lib/catalogue.ts` over `src/data`): the only way anything reads Timepiece data.
 - Cart (`src/store/cart.ts`): the Shopper's cart, kept in their browser.
-- 3D (`src/components/three`): the canvas, the Hero Timepiece, its parts, materials and clock.
+- 3D (`src/components/three`): the canvas, the Hero Timepiece, its parts, materials, clock and Pose.
 - Sections (`src/components/home`, `shop`, `ui`): one component per act, section or widget.
 - Model tooling (`scripts/`): offline scripts that turn `models-raw/` into `public/models/` and render stills. `npm run models` prepares the Hero Timepiece and its lighter phone model; `src/components/three/hero-model.ts` sets the part names and says what scene code may rely on. `npm run stills` builds the site and photographs the live scene into `public/stills/`.
 
@@ -128,6 +128,7 @@ All specifications and brand history are invented; keep them plausible and modes
 
 - The model is addressed by **part names** set once in `src/components/three/hero-model.ts`, which `scripts/prepare-models.mjs` imports: crystal, hands, dial, dial base, case, crown and pushers, bracelet. Scene code never refers to the source file's mesh names.
 - Scroll drives everything through one progress value per act. ScrollTrigger writes it to a ref-based store and the frame loop reads it. Never put scroll progress in React state: a render per frame is what makes a phone stutter.
+- The watch's Pose is worked out in one place: `poseAt` in `src/components/three/pose.ts`, a pure function of the three acts' progress and the Stage's aspect. The frame loop in `HeroScene.tsx` only applies it, then adds the Shopper's drag on top. Change how the watch is held, lit or fitted to the Stage there, and show it in `pose.test.ts`. Two things it relies on live elsewhere: `PIVOT_DEPTH` in `HeroScene.tsx`, which `pose.test.ts` repeats, and `EXPLODED_VIEW_CLOSES` in `exploded-view.ts`, which Home reads.
 - Every act is fully reversible. Scrolling back up plays it backwards with no jump.
 - In the Exploded View the seven layers separate along the watch's axis, each is named in real text beside it, and they close again as the price appears.
 - The hands follow the device clock. The second hand ticks once per second; the Exploded View may lift the hands but never stops the clock.
