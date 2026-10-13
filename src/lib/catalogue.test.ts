@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { expect, test } from "vitest";
 
 import {
+  getCollection,
   getHeroTimepiece,
   getTimepiece,
   listCollections,
@@ -48,6 +49,15 @@ test("a Timepiece is found by its slug, and an unknown slug finds nothing", asyn
   expect(await getTimepiece("a-watch-tolvik-never-made")).toBeUndefined();
 });
 
+test("every Timepiece's Collection is found by its slug", async () => {
+  const collections = await listCollections();
+
+  for (const { name, collection } of await listTimepieces()) {
+    expect(collections, name).toContain(await getCollection(collection));
+  }
+  expect(await getCollection("a-collection-tolvik-never-made")).toBeUndefined();
+});
+
 test("the six Timepieces come in six Finishes", async () => {
   const finishes = (await listTimepieces()).map(({ finish }) =>
     [finish.dial, finish.case, finish.bracelet].join(" "),
@@ -58,11 +68,15 @@ test("the six Timepieces come in six Finishes", async () => {
 
 // This one reads the committed files that `npm run stills` writes, so a new
 // Timepiece without its photograph fails here.
-test("every Timepiece has a Still, and every Still is a committed file", async () => {
+test("every Timepiece has three Stills, and every Still is a committed file", async () => {
   const publicDir = fileURLToPath(new URL("../../public", import.meta.url));
 
   for (const { name, stills } of await listTimepieces()) {
-    expect(stills.length, name).toBeGreaterThan(0);
+    // From the front first: that is the one a listing shows.
+    expect(
+      stills.map(({ view }) => view),
+      name,
+    ).toEqual(["front", "profile", "exploded"]);
     for (const { src, alt } of stills) {
       expect(existsSync(publicDir + src), src).toBe(true);
       expect(alt, src).toContain(name);

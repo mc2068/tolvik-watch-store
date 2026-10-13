@@ -31,7 +31,10 @@ export type Timepiece = {
   description: string;
   specifications: Specifications;
   finish: Finish;
-  /** Its Stills. The first is the one a listing shows. */
+  /**
+   * Its Stills, one of each view. The first, from the front, is the one a
+   * listing shows.
+   */
   stills: Still[];
   /** Whether this is the one Timepiece shown in real-time 3D. */
   isHero: boolean;
@@ -64,10 +67,24 @@ export type Steel = "bare" | "blackened";
 export type Still = {
   src: string;
   alt: string;
+  view: StillView;
 };
+
+/**
+ * How the Timepiece is held in a Still: arrived and facing the Shopper, in
+ * profile as the turn act leaves it, or open in the Exploded View.
+ */
+export type StillView = "front" | "profile" | "exploded";
 
 export async function listCollections(): Promise<Collection[]> {
   return collections;
+}
+
+/** The Collection at this slug, if Tolvik has one. */
+export async function getCollection(
+  slug: string,
+): Promise<Collection | undefined> {
+  return collections.find((collection) => collection.slug === slug);
 }
 
 export async function listTimepieces(): Promise<Timepiece[]> {

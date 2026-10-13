@@ -169,10 +169,13 @@
   }
 }
 
-/* A Still as a listing frames it. The camera composes the watch for the
-   Stage: left of the square's middle, with room around it. A listing crops
-   that square to an upright frame with the watch in the middle. The Still
-   is photographed against the page's own black, which its compression can
+/* A Still as a listing or a Timepiece's page frames it. The camera composes
+   the watch for the Stage, not for the frame: from the front it stands left
+   of the square's middle, in profile right of it, and open in the Exploded
+   View at its left, where the Stage leaves room for the parts' names. The
+   frame crops that square to an upright one with the watch in the middle,
+   so how far across it crops goes by the Still's view. The Still is
+   photographed against the page's own black, which its compression can
    leave a shade out; `lighten` shows whichever of the two is lighter, so
    the watch stands on the page with no edge around it. */
 @utility still-frame {
@@ -184,6 +187,14 @@
     object-fit: cover;
     object-position: 25% 50%;
     mix-blend-mode: lighten;
+  }
+
+  &[data-view="profile"] img {
+    object-position: 86% 50%;
+  }
+
+  &[data-view="exploded"] img {
+    object-position: 0% 50%;
   }
 }
 

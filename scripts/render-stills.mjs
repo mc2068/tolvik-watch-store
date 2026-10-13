@@ -1,28 +1,35 @@
-// Renders the Stills: one of each Timepiece in the Catalogue, arrived and
-// lit, and one more of the Hero Timepiece.
+// Renders the Stills: three of each Timepiece in the Catalogue, one of each
+// view, and one more of the Hero Timepiece.
 //
+//   public/stills/<name>.webp                   from the front: the watch
+//                                               arrived and lit
+//   public/stills/<name>-profile.webp           in profile, as the turn act
+//                                               leaves it
+//   public/stills/<name>-exploded.webp          open in the Exploded View
 //   public/stills/hero-timepiece-opening.webp   the opening of the arrival
 //                                               act, shown on Home until the
 //                                               3D is drawn
-//   public/stills/hero-timepiece.webp           the Hero Timepiece arrived,
-//                                               shown where there is no 3D
-//   public/stills/<slug>.webp                   each other Timepiece arrived
+//
+// The Catalogue says where each Timepiece's Stills go. The Hero Timepiece's
+// are filed under `hero-timepiece`, and Home shows the one from the front
+// where there is no 3D.
 //
 //   npm run stills
 //
 // Each Still is a photograph of the real thing. The script builds the site
 // with its studio open: a page that plays Home's 3D acts with any Timepiece,
 // in its own Finish. It serves that build, opens each Timepiece's studio in
-// a headless browser, waits for the scene and captures the square the camera
+// a headless browser, waits for the scene, scrolls to where the acts hold
+// the watch as each view wants it and captures the square the camera
 // composes the watch in. Rendered from the scene itself, the opening Still
 // matches the canvas that replaces it on Home in all but the time on the
 // dial.
 //
 // Like `npm run models` it runs offline, on a developer's machine, and its
 // outputs are committed. Run it again whenever the model, its materials, the
-// lighting, the camera, the arrival act or a Timepiece's Finish changes. It
-// ends by building the site once more with the studio closed, so the build
-// it leaves in `.next` is the one a Shopper gets.
+// lighting, the camera, the acts or a Timepiece's Finish changes. It ends by
+// building the site once more with the studio closed, so the build it leaves
+// in `.next` is the one a Shopper gets.
 
 import { spawn, spawnSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -49,6 +56,17 @@ const DENSITY = 2;
 // The time on the dial in every Still: eight minutes past ten, the pose that
 // shows a dial at its clearest. The live watch shows the Shopper's own time.
 const SHOWN_TIME = { hours: 10, minutes: 8, seconds: 37 };
+
+// Where in the acts each view is photographed: how far through which act.
+// Each is a moment the act holds the watch still. The arrival act has brought
+// it to rest by four fifths of the way; the turn act holds its profile from
+// there on; and the Exploded View has every part out, and nothing moving,
+// between coming apart and closing.
+const VIEWS = {
+  front: { act: "arrival-headline", progress: 1 },
+  profile: { act: "turn-heading", progress: 0.9 },
+  exploded: { act: "exploded-view-heading", progress: 0.57 },
+};
 
 /** Builds the site, with the studio open or, as it is deployed, closed. */
 function buildSite({ studio }) {
@@ -172,6 +190,25 @@ async function fitWindow(browser, site, timepiece) {
   return { ...window, height: window.height + SIDE / DENSITY - stage.height };
 }
 
+/**
+ * Scrolls to where an act is `progress` of the way through. The act is named
+ * by its heading. It ends when the foot of its section reaches the foot of
+ * the screen; the arrival act begins at the top of the page, and each of the
+ * others as its section comes onto the screen.
+ */
+function scrollThrough(page, { act, progress }) {
+  return page.evaluate(
+    ({ act, progress }) => {
+      const section = document.querySelector(`section[aria-labelledby="${act}"]`);
+      const { top, bottom } = section.getBoundingClientRect();
+      const ends = bottom + window.scrollY - window.innerHeight;
+      const begins = Math.max(0, top + window.scrollY - window.innerHeight);
+      window.scrollTo(0, begins + progress * (ends - begins));
+    },
+    { act, progress },
+  );
+}
+
 /** Photographs one Timepiece in its studio and writes its Stills. */
 async function photograph(browser, site, window, timepiece) {
   const page = await browser.newPage({
@@ -207,10 +244,10 @@ async function photograph(browser, site, window, timepiece) {
     write(HERO_OPENING_STILL, await capture(page, figure));
   }
 
-  // The arrival act is two Stages long and the Stage holds for it, so one
-  // Stage of scrolling plays the act to its end.
-  await page.evaluate((y) => window.scrollTo(0, y), SIDE / DENSITY);
-  write(timepiece.stills[0].src, await capture(page, figure));
+  for (const still of timepiece.stills) {
+    await scrollThrough(page, VIEWS[still.view]);
+    write(still.src, await capture(page, figure));
+  }
 
   await page.close();
 }

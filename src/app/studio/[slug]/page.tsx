@@ -22,7 +22,7 @@ export default async function Studio({ params }: PageProps<"/studio/[slug]">) {
 
   return (
     <main>
-      <HeroActs timepiece={timepiece} href="/collection" />
+      <HeroActs timepiece={timepiece} />
     </main>
   );
 }

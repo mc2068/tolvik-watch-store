@@ -1,4 +1,4 @@
-import type { Specifications, Timepiece } from "../lib/catalogue.ts";
+import type { Specifications, Still, Timepiece } from "../lib/catalogue.ts";
 
 // Tolvik's six Timepieces. Sample data: every name, price and specification
 // is invented. Only the Catalogue reads this file.
@@ -26,6 +26,32 @@ const inBlackenedSteel = {
   bracelet: "Blackened steel links with a folding clasp",
 } satisfies Partial<Specifications>;
 
+// A Timepiece's three Stills, under the name `npm run stills` files them by.
+function stillsOf(
+  file: string,
+  name: string,
+  steel: string,
+  dial: string,
+): Still[] {
+  return [
+    {
+      view: "front",
+      src: `/stills/${file}.webp`,
+      alt: `The ${name} in ${steel}, with a ${dial} dial`,
+    },
+    {
+      view: "profile",
+      src: `/stills/${file}-profile.webp`,
+      alt: `The ${name} in profile, its crown to the front`,
+    },
+    {
+      view: "exploded",
+      src: `/stills/${file}-exploded.webp`,
+      alt: `The ${name} lifted apart into its seven parts`,
+    },
+  ];
+}
+
 export const timepieces: Timepiece[] = [
   {
     slug: "tjern",
@@ -39,13 +65,8 @@ export const timepieces: Timepiece[] = [
       dial: "Deep blue, with luminous batons and hands",
     },
     finish: { dial: "#1b3352", case: "bare", bracelet: "bare" },
-    // Home shows this Still too, wherever the 3D never comes.
-    stills: [
-      {
-        src: "/stills/hero-timepiece.webp",
-        alt: "The Tjern in brushed steel, with a deep blue dial",
-      },
-    ],
+    // Home shows the first of these too, wherever the 3D never comes.
+    stills: stillsOf("hero-timepiece", "Tjern", "brushed steel", "deep blue"),
     isHero: true,
   },
   {
@@ -60,12 +81,7 @@ export const timepieces: Timepiece[] = [
       dial: "Slate grey, with luminous batons and hands",
     },
     finish: { dial: "#5b636e", case: "bare", bracelet: "bare" },
-    stills: [
-      {
-        src: "/stills/skifer.webp",
-        alt: "The Skifer in brushed steel, with a slate grey dial",
-      },
-    ],
+    stills: stillsOf("skifer", "Skifer", "brushed steel", "slate grey"),
     isHero: false,
   },
   {
@@ -80,12 +96,7 @@ export const timepieces: Timepiece[] = [
       dial: "Spruce green lacquer, with luminous batons and hands",
     },
     finish: { dial: "#245c44", case: "bare", bracelet: "bare" },
-    stills: [
-      {
-        src: "/stills/gran.webp",
-        alt: "The Gran in brushed steel, with a spruce green dial",
-      },
-    ],
+    stills: stillsOf("gran", "Gran", "brushed steel", "spruce green"),
     isHero: false,
   },
   {
@@ -100,12 +111,7 @@ export const timepieces: Timepiece[] = [
       dial: "Coal black, with luminous batons and hands",
     },
     finish: { dial: "#101214", case: "blackened", bracelet: "blackened" },
-    stills: [
-      {
-        src: "/stills/kull.webp",
-        alt: "The Kull in blackened steel, with a coal black dial",
-      },
-    ],
+    stills: stillsOf("kull", "Kull", "blackened steel", "coal black"),
     isHero: false,
   },
   {
@@ -120,12 +126,7 @@ export const timepieces: Timepiece[] = [
       dial: "Midnight blue, with luminous batons and hands",
     },
     finish: { dial: "#17275c", case: "blackened", bracelet: "blackened" },
-    stills: [
-      {
-        src: "/stills/midnatt.webp",
-        alt: "The Midnatt in blackened steel, with a midnight blue dial",
-      },
-    ],
+    stills: stillsOf("midnatt", "Midnatt", "blackened steel", "midnight blue"),
     isHero: false,
   },
   {
@@ -140,12 +141,7 @@ export const timepieces: Timepiece[] = [
       dial: "Heather plum lacquer, with luminous batons and hands",
     },
     finish: { dial: "#52305a", case: "blackened", bracelet: "blackened" },
-    stills: [
-      {
-        src: "/stills/lyng.webp",
-        alt: "The Lyng in blackened steel, with a heather plum dial",
-      },
-    ],
+    stills: stillsOf("lyng", "Lyng", "blackened steel", "heather plum"),
     isHero: false,
   },
 ];
