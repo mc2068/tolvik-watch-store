@@ -11,6 +11,7 @@ import {
 
 import { HERO_STILL } from "@/components/three/hero-model";
 import { actProgress } from "@/lib/act-progress";
+import type { Finish } from "@/lib/catalogue";
 
 // `next/dynamic` with `ssr: false` keeps the 3D code out of the server's HTML
 // and out of the page's first download: the browser fetches it only after
@@ -47,7 +48,7 @@ function subscribeToMotionPreference(onChange: () => void) {
  * drawn. A Shopper who prefers reduced motion, a browser that cannot draw
  * 3D and a scene that fails or is dropped all keep a Still.
  */
-export function HeroStage() {
+export function HeroStage({ finish }: { finish: Finish }) {
   // `useSyncExternalStore` reads something that lives outside React. Its
   // third argument is the answer on the server and while the page hydrates,
   // where neither question can be asked yet: null, not known.
@@ -93,6 +94,7 @@ export function HeroStage() {
               className={`absolute inset-0 transition-opacity duration-(--duration-calm) ease-settle ${drawn ? "" : "opacity-0"}`}
             >
               <HeroScene
+                finish={finish}
                 onReady={() => setDrawn(true)}
                 onLost={() => setFailed(true)}
               />

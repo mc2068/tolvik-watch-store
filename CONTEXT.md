@@ -28,6 +28,10 @@ _Avoid_: Product, item, hand watch
 The one Timepiece presented as an interactive 3D object; every other Timepiece is shown in still images.
 _Avoid_: Main product, 3D watch, featured watch
 
+**Finish**:
+How a Timepiece's surfaces are made: the colour of its dial, and whether the steel of its case and of its bracelet is left brushed or blackened. The six Timepieces share one case shape and differ only in Finish.
+_Avoid_: Material, skin, style
+
 **Colourway**:
 One combination of dial colour and strap in which the Hero Timepiece can be shown and bought.
 _Avoid_: Variant, option, configuration

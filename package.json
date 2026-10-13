@@ -11,7 +11,7 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "models": "node scripts/prepare-models.mjs",
-    "stills": "next build && node scripts/render-stills.mjs"
+    "stills": "node scripts/render-stills.mjs"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",

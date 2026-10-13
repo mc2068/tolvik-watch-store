@@ -2,6 +2,7 @@ import { Arrival } from "@/components/home/Arrival";
 import { ExplodedView } from "@/components/home/ExplodedView";
 import { HeroStage } from "@/components/home/HeroStage";
 import { Turn } from "@/components/home/Turn";
+import type { Timepiece } from "@/lib/catalogue";
 import { formatPrice } from "@/lib/price";
 
 /**
@@ -11,8 +12,11 @@ import { formatPrice } from "@/lib/price";
  */
 export function HeroActs({
   heroTimepiece,
+  href,
 }: {
-  heroTimepiece: { price: number; href: string };
+  heroTimepiece: Timepiece;
+  /** Where the call to action that closes the acts leads. */
+  href: string;
 }) {
   return (
     <div>
@@ -20,7 +24,7 @@ export function HeroActs({
           copy on a laptop. On a phone the copy would have to cross it, so
           there it leaves with the first screen. */}
       <div className="sticky top-header h-stage overflow-hidden motion-reduce:max-lg:static">
-        <HeroStage />
+        <HeroStage finish={heroTimepiece.finish} />
       </div>
 
       {/* The acts are pulled up over the stage, so the first starts at the
@@ -31,7 +35,7 @@ export function HeroActs({
         <Turn />
         <ExplodedView
           price={formatPrice(heroTimepiece.price)}
-          href={heroTimepiece.href}
+          href={href}
         />
       </div>
     </div>

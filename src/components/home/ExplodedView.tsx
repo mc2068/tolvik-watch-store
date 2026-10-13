@@ -1,12 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useRef, useSyncExternalStore } from "react";
 
 import { ActFrame } from "@/components/home/ActFrame";
 import { useActScore } from "@/components/home/use-act-score";
 import { EXPLODED_VIEW_CLOSES } from "@/components/three/exploded-view";
 import { type Part, PARTS } from "@/components/three/hero-model";
+import { ActionLink } from "@/components/ui/ActionLink";
 import { partLabels } from "@/lib/part-labels";
 
 const PART_NAMES: Record<Part, string> = {
@@ -93,15 +93,9 @@ export function ExplodedView({
           <p className="mt-4 max-w-measure text-lead text-platinum-dim md:mt-6">
             In steel on a steel bracelet, with a deep blue dial.
           </p>
-          {/* The page this leads to is not built yet, so Next must not fetch
-              it ahead of the click; remove `prefetch={false}` once it is. */}
-          <Link
-            href={href}
-            prefetch={false}
-            className="mt-8 inline-flex h-12 items-center border border-platinum-dim px-7 text-small tracking-open text-platinum transition-colors duration-(--duration-quick) ease-settle hover:border-steel hover:text-steel"
-          >
+          <ActionLink href={href} className="mt-8">
             View the Timepiece
-          </Link>
+          </ActionLink>
         </ActFrame>
       </div>
     </section>

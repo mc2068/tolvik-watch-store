@@ -8,48 +8,53 @@ import {
   drawDialWordmark,
 } from "@/components/three/dial-wordmark";
 import { HAND_CAP, HANDS, HERO_MODEL } from "@/components/three/hero-model";
-import { createFinish } from "@/components/three/materials";
+import { createMaterials } from "@/components/three/materials";
 import { useClock } from "@/components/three/use-clock";
+import type { Finish } from "@/lib/catalogue";
 
 // The wordmark sits on the dial between its centre and twelve o'clock, a
 // hair above the plate so the two surfaces never fight for the same pixel.
 const WORDMARK = { width: 0.56, y: 0.33, lift: 0.002 } as const;
 
-/** The Hero Timepiece: the prepared model, finished part by part. */
-export function HeroTimepiece() {
+/** The Hero Timepiece: the prepared model, each part made in the Finish. */
+export function HeroTimepiece({ finish }: { finish: Finish }) {
   // `useGLTF` downloads and decodes the model, and pauses this component
   // (React's Suspense) until it is ready. The Draco decoder is switched off:
   // the model is meshopt-compressed and needs nothing fetched to decode it.
   const { nodes } = useGLTF(HERO_MODEL.main, false);
   const handsPart = useClock();
 
-  const finish = useMemo(() => createFinish(), []);
+  const materials = useMemo(() => createMaterials(finish), [finish]);
   useEffect(
     () => () => {
-      for (const material of Object.values(finish)) material.dispose();
+      for (const material of Object.values(materials)) material.dispose();
     },
-    [finish],
+    [materials],
   );
 
   return (
     <group>
-      <primitive object={nodes.crystal} material={finish.crystal} />
+      <primitive object={nodes.crystal} material={materials.crystal} />
       <primitive ref={handsPart} object={nodes.hands}>
         {HANDS.map((hand) => (
-          <primitive key={hand} object={nodes[hand]} material={finish.hands} />
+          <primitive
+            key={hand}
+            object={nodes[hand]}
+            material={materials.hands}
+          />
         ))}
-        <primitive object={nodes[HAND_CAP]} material={finish.hands} />
+        <primitive object={nodes[HAND_CAP]} material={materials.hands} />
       </primitive>
-      <primitive object={nodes.dial} material={finish.dial} />
-      <primitive object={nodes["dial-base"]} material={finish["dial-base"]}>
+      <primitive object={nodes.dial} material={materials.dial} />
+      <primitive object={nodes["dial-base"]} material={materials["dial-base"]}>
         <DialWordmark />
       </primitive>
-      <primitive object={nodes.case} material={finish.case} />
+      <primitive object={nodes.case} material={materials.case} />
       <primitive
         object={nodes["crown-and-pushers"]}
-        material={finish["crown-and-pushers"]}
+        material={materials["crown-and-pushers"]}
       />
-      <primitive object={nodes.bracelet} material={finish.bracelet} />
+      <primitive object={nodes.bracelet} material={materials.bracelet} />
     </group>
   );
 }

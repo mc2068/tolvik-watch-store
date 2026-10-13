@@ -1,15 +1,17 @@
+import { CollectionSection } from "@/components/home/CollectionSection";
 import { Craftsmanship } from "@/components/home/Craftsmanship";
 import { HeroActs } from "@/components/home/HeroActs";
+import { getHeroTimepiece } from "@/lib/catalogue";
 
-// The Hero Timepiece's price and where its call to action leads, set here
-// until the Catalogue exists to be asked. The Timepiece has no page of its
-// own yet, so the call to action leads to the Collection.
-const heroTimepiece = { price: 6400, href: "/collection" };
+export default async function Home() {
+  const heroTimepiece = await getHeroTimepiece();
 
-export default function Home() {
   return (
     <main>
-      <HeroActs heroTimepiece={heroTimepiece} />
+      {/* The Hero Timepiece has no page of its own yet, so the call to action
+          leads to the Collection. */}
+      <HeroActs heroTimepiece={heroTimepiece} href="/collection" />
+      <CollectionSection />
       <Craftsmanship />
     </main>
   );

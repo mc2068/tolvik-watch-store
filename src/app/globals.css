@@ -169,6 +169,24 @@
   }
 }
 
+/* A Still as a listing frames it. The camera composes the watch for the
+   Stage: left of the square's middle, with room around it. A listing crops
+   that square to an upright frame with the watch in the middle. The Still
+   is photographed against the page's own black, which its compression can
+   leave a shade out; `lighten` shows whichever of the two is lighter, so
+   the watch stands on the page with no edge around it. */
+@utility still-frame {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+
+  & img {
+    object-fit: cover;
+    object-position: 25% 50%;
+    mix-blend-mode: lighten;
+  }
+}
+
 /* A link inside a sentence: underlined in the accent so it reads as a link
    without relying on colour alone. */
 @utility text-link {
