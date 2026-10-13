@@ -6,7 +6,7 @@ import { listCollections, listTimepieces } from "@/lib/catalogue";
 export const metadata: Metadata = {
   title: "The Collection",
   description:
-    "Tolvik's six Timepieces in two Collections: Kyst in brushed steel and Natt in blackened steel.",
+    "Every Tolvik Timepiece, by Collection, in brushed and in blackened steel.",
 };
 
 // A server component may be an async function: it waits for its data on the

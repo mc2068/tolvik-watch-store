@@ -5,7 +5,8 @@ import { formatPrice } from "@/lib/price";
 
 /**
  * A Timepiece as a listing shows it: its Still, its name and its price. The
- * Still has the page's own black behind the watch, so it needs no frame.
+ * Still has the page's own black behind the watch, so nothing is drawn
+ * around it: the watch stands on the page itself.
  */
 export function TimepieceCard({
   timepiece,

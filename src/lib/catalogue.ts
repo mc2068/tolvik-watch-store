@@ -50,7 +50,7 @@ export type Specifications = {
 /**
  * How a Timepiece's surfaces are made, as the values the 3D model needs:
  * the dial plate's colour as a hex colour, and whether the steel of the case
- * and of the bracelet is left brushed or blackened.
+ * and of the bracelet is left bare or blackened.
  */
 export type Finish = {
   dial: string;
@@ -58,7 +58,7 @@ export type Finish = {
   bracelet: Steel;
 };
 
-export type Steel = "steel" | "black";
+export type Steel = "bare" | "blackened";
 
 /** A fixed image of a Timepiece, served from `public`. */
 export type Still = {

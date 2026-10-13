@@ -16,25 +16,25 @@ import type { Finish, Steel } from "@/lib/catalogue";
 //
 // Steel is either left bare or blackened. Blackened steel is still a metal:
 // it keeps its highlights and loses only its colour, and its coating blurs
-// them a little.
+// them a little, which is so much roughness added to the steel's own.
 const STEEL: Record<Steel, { color: string; coating: number }> = {
-  steel: { color: "#c4c8cd", coating: 0 },
-  black: { color: "#6e737b", coating: 0.06 },
+  bare: { color: "#c4c8cd", coating: 0 },
+  blackened: { color: "#6e737b", coating: 0.06 },
 };
+// How rough each way of working the steel leaves its surface.
+const ROUGHNESS = { brushed: 0.34, polished: 0.16 } as const;
+
+/** What a steel surface is made of, worked one way or the other. */
+const steelSurface = (steel: Steel, worked: keyof typeof ROUGHNESS) => ({
+  color: STEEL[steel].color,
+  metalness: 1,
+  roughness: ROUGHNESS[worked] + STEEL[steel].coating,
+});
+
 // The hands and markers are filled with a pale luminous paint, so they are
 // the first thing to show in the dark and the last to fade.
 const LUME = "#dfe9f2";
 const LUME_GLOW = 0.3;
-
-// How rough each way of working the steel leaves it, before any coating.
-const BRUSHED = 0.34;
-const POLISHED = 0.16;
-
-const steel = (kind: Steel, worked: number) => ({
-  color: STEEL[kind].color,
-  metalness: 1,
-  roughness: worked + STEEL[kind].coating,
-});
 
 /**
  * One material per part, for a Timepiece in this Finish. The caller owns
@@ -71,14 +71,14 @@ export function createMaterials(finish: Finish): Record<Part, Material> {
       metalness: 0.35,
       roughness: 0.55,
     }),
-    case: new MeshStandardMaterial(steel(finish.case, BRUSHED)),
+    case: new MeshStandardMaterial(steelSurface(finish.case, "brushed")),
     // The crown and pushers are cut from the case's steel, and polished.
     "crown-and-pushers": new MeshStandardMaterial(
-      steel(finish.case, POLISHED),
+      steelSurface(finish.case, "polished"),
     ),
     // The links are open shells, so both faces are drawn.
     bracelet: new MeshStandardMaterial({
-      ...steel(finish.bracelet, BRUSHED),
+      ...steelSurface(finish.bracelet, "brushed"),
       side: DoubleSide,
     }),
   };

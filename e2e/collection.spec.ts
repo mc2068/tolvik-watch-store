@@ -1,8 +1,8 @@
 import { expect, type Page, test } from "@playwright/test";
 
-// Tolvik's whole range, as the brief sets it out: six Timepieces in two
+// Everything Tolvik makes, as the brief sets it out: six Timepieces in two
 // Collections, three in each.
-const range = [
+const collections = [
   {
     collection: "Kyst",
     timepieces: [
@@ -21,6 +21,9 @@ const range = [
   },
 ];
 
+const everyTimepiece = collections.flatMap(({ timepieces }) => timepieces);
+const [[, skifer], [kull]] = collections.map(({ timepieces }) => timepieces);
+
 const listed = (page: Page) => page.getByRole("main").getByRole("listitem");
 
 test("the Collection page lists six Timepieces with their prices", async ({
@@ -32,7 +35,7 @@ test("the Collection page lists six Timepieces with their prices", async ({
     "The Collection",
   );
   await expect(listed(page)).toHaveCount(6);
-  for (const { name, price } of range.flatMap(({ timepieces }) => timepieces)) {
+  for (const { name, price } of everyTimepiece) {
     const timepiece = listed(page).filter({
       has: page.getByRole("heading", { name, exact: true }),
     });
@@ -45,7 +48,7 @@ test("the Collection page groups the Timepieces by Collection", async ({
 }) => {
   await page.goto("/collection");
 
-  for (const { collection, timepieces } of range) {
+  for (const { collection, timepieces } of collections) {
     const group = page.getByRole("region", { name: collection });
 
     await expect(group.getByRole("heading", { level: 2 })).toHaveText(
@@ -62,7 +65,7 @@ test("every Timepiece on the Collection page is shown in its Still", async ({
 }) => {
   await page.goto("/collection");
 
-  for (const { name } of range.flatMap(({ timepieces }) => timepieces)) {
+  for (const { name } of everyTimepiece) {
     const still = listed(page).getByRole("img", { name: `The ${name} in` });
 
     await still.scrollIntoViewIfNeeded();
@@ -116,7 +119,7 @@ test("Home shows a selection of the Collection and the way to all of it", async 
   // One Timepiece from each Collection, neither of them the Hero Timepiece,
   // which Home has already shown.
   await expect(collection.getByRole("listitem")).toHaveCount(2);
-  for (const { name, price } of [range[0].timepieces[1], range[1].timepieces[0]]) {
+  for (const { name, price } of [skifer, kull]) {
     const timepiece = collection.getByRole("listitem").filter({
       has: page.getByRole("heading", { name, exact: true }),
     });

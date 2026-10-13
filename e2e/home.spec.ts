@@ -1,7 +1,7 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
 
 const heroTimepiece = (page: Page) =>
-  page.getByRole("img", { name: "The Tolvik watch in steel" });
+  page.getByRole("img", { name: "The Tjern in brushed steel" });
 
 // How much of an element shows: its own opacity times every ancestor's.
 const shownOpacity = (element: Locator) =>

@@ -29,7 +29,7 @@ The one Timepiece presented as an interactive 3D object; every other Timepiece i
 _Avoid_: Main product, 3D watch, featured watch
 
 **Finish**:
-How a Timepiece's surfaces are made: the colour of its dial, and whether the steel of its case and of its bracelet is left brushed or blackened. The six Timepieces share one case shape and differ only in Finish.
+How a Timepiece's surfaces are made: the colour of its dial, and whether the steel of its case and of its bracelet is left bare or blackened. The six Timepieces share one case shape and differ only in Finish.
 _Avoid_: Material, skin, style
 
 **Colourway**:

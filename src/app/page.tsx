@@ -10,7 +10,7 @@ export default async function Home() {
     <main>
       {/* The Hero Timepiece has no page of its own yet, so the call to action
           leads to the Collection. */}
-      <HeroActs heroTimepiece={heroTimepiece} href="/collection" />
+      <HeroActs timepiece={heroTimepiece} href="/collection" />
       <CollectionSection />
       <Craftsmanship />
     </main>

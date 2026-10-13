@@ -3,9 +3,9 @@ import { ActionLink } from "@/components/ui/ActionLink";
 import { listCollections, listTimepieces } from "@/lib/catalogue";
 
 /**
- * Home's Collection section: a selection of the range and the way to all of
- * it. It follows the acts, so it shows what they have not: one Timepiece
- * from each Collection, passing over the Hero Timepiece.
+ * Home's Collection section: a selection of the Timepieces and the way to
+ * all of them. It follows the acts, so it shows what they have not: one
+ * Timepiece from each Collection, passing over the Hero Timepiece.
  */
 export async function CollectionSection() {
   const [collections, timepieces] = await Promise.all([

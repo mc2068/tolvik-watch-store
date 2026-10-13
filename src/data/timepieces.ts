@@ -38,7 +38,8 @@ export const timepieces: Timepiece[] = [
       ...inSteel,
       dial: "Deep blue, with luminous batons and hands",
     },
-    finish: { dial: "#1b3352", case: "steel", bracelet: "steel" },
+    finish: { dial: "#1b3352", case: "bare", bracelet: "bare" },
+    // Home shows this Still too, wherever the 3D never comes.
     stills: [
       {
         src: "/stills/hero-timepiece.webp",
@@ -58,7 +59,7 @@ export const timepieces: Timepiece[] = [
       ...inSteel,
       dial: "Slate grey, with luminous batons and hands",
     },
-    finish: { dial: "#5b636e", case: "steel", bracelet: "steel" },
+    finish: { dial: "#5b636e", case: "bare", bracelet: "bare" },
     stills: [
       {
         src: "/stills/skifer.webp",
@@ -78,7 +79,7 @@ export const timepieces: Timepiece[] = [
       ...inSteel,
       dial: "Spruce green lacquer, with luminous batons and hands",
     },
-    finish: { dial: "#245c44", case: "steel", bracelet: "steel" },
+    finish: { dial: "#245c44", case: "bare", bracelet: "bare" },
     stills: [
       {
         src: "/stills/gran.webp",
@@ -98,7 +99,7 @@ export const timepieces: Timepiece[] = [
       ...inBlackenedSteel,
       dial: "Coal black, with luminous batons and hands",
     },
-    finish: { dial: "#101214", case: "black", bracelet: "black" },
+    finish: { dial: "#101214", case: "blackened", bracelet: "blackened" },
     stills: [
       {
         src: "/stills/kull.webp",
@@ -118,7 +119,7 @@ export const timepieces: Timepiece[] = [
       ...inBlackenedSteel,
       dial: "Midnight blue, with luminous batons and hands",
     },
-    finish: { dial: "#17275c", case: "black", bracelet: "black" },
+    finish: { dial: "#17275c", case: "blackened", bracelet: "blackened" },
     stills: [
       {
         src: "/stills/midnatt.webp",
@@ -138,7 +139,7 @@ export const timepieces: Timepiece[] = [
       ...inBlackenedSteel,
       dial: "Heather plum lacquer, with luminous batons and hands",
     },
-    finish: { dial: "#52305a", case: "black", bracelet: "black" },
+    finish: { dial: "#52305a", case: "blackened", bracelet: "blackened" },
     stills: [
       {
         src: "/stills/lyng.webp",

@@ -9,9 +9,9 @@ import {
   useSyncExternalStore,
 } from "react";
 
-import { HERO_STILL } from "@/components/three/hero-model";
+import { HERO_OPENING_STILL } from "@/components/three/hero-model";
 import { actProgress } from "@/lib/act-progress";
-import type { Finish } from "@/lib/catalogue";
+import type { Finish, Still } from "@/lib/catalogue";
 
 // `next/dynamic` with `ssr: false` keeps the 3D code out of the server's HTML
 // and out of the page's first download: the browser fetches it only after
@@ -48,7 +48,15 @@ function subscribeToMotionPreference(onChange: () => void) {
  * drawn. A Shopper who prefers reduced motion, a browser that cannot draw
  * 3D and a scene that fails or is dropped all keep a Still.
  */
-export function HeroStage({ finish }: { finish: Finish }) {
+export function HeroStage({
+  finish,
+  still,
+}: {
+  /** The Finish the watch is made in. */
+  finish: Finish;
+  /** The Timepiece's Still: the watch arrived and lit. */
+  still: Still;
+}) {
   // `useSyncExternalStore` reads something that lives outside React. Its
   // third argument is the answer on the server and while the page hydrates,
   // where neither question can be asked yet: null, not known.
@@ -79,11 +87,12 @@ export function HeroStage({ finish }: { finish: Finish }) {
     <div className="watch-box">
       <div
         role="img"
-        aria-label="The Tolvik watch in steel, with a deep blue dial"
+        aria-label={still.alt}
         data-hero-timepiece={state}
         className="absolute inset-0"
       >
         <HeroStill
+          arrived={still.src}
           awaiting3D={supported !== false && !failed}
           hidden={state === "ready"}
         />
@@ -140,9 +149,11 @@ export function HeroStage({ finish }: { finish: Finish }) {
  * `awaiting3D` turns false when the 3D will never come.
  */
 function HeroStill({
+  arrived,
   awaiting3D,
   hidden,
 }: {
+  arrived: string;
   awaiting3D: boolean;
   hidden: boolean;
 }) {
@@ -158,8 +169,8 @@ function HeroStill({
       loading: "eager",
       fetchPriority: "high",
     }).props;
-  const opening = still(HERO_STILL.opening);
-  const arrived = still(HERO_STILL.arrived);
+  const opening = still(HERO_OPENING_STILL);
+  const fallback = still(arrived);
 
   return (
     <picture>
@@ -171,7 +182,7 @@ function HeroStill({
         />
       )}
       <img
-        {...arrived}
+        {...fallback}
         alt=""
         className={`object-contain transition-opacity duration-(--duration-calm) ease-settle ${hidden ? "opacity-0" : ""}`}
       />
