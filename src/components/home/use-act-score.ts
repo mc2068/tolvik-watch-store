@@ -37,7 +37,20 @@ export function useActScore(
     const motion = gsap.matchMedia();
 
     motion.add("(prefers-reduced-motion: no-preference)", () => {
-      const played = { progress: 0 };
+      // The act's progress, as a property the score moves and not a callback
+      // it fires. Whenever ScrollTrigger measures the page again (a resized
+      // window, a turned phone, the page finishing its load) it puts the
+      // score where scroll says without firing its callbacks. A property is
+      // written all the same, so the watch is never left where the score
+      // happened to be at that moment.
+      const played = {
+        get progress() {
+          return actProgress.get(act);
+        },
+        set progress(value: number) {
+          actProgress.set(act, value);
+        },
+      };
 
       const score = gsap
         .timeline({
@@ -50,11 +63,7 @@ export function useActScore(
             scrub: 0.5,
           },
         })
-        .to(played, {
-          progress: 1,
-          duration: over,
-          onUpdate: () => actProgress.set(act, played.progress),
-        })
+        .to(played, { progress: 1, duration: over })
         .set({}, {}, 1);
       compose(score);
 
