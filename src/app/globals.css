@@ -129,21 +129,32 @@
 }
 
 @layer base {
+  /* What the browser brings into view, an anchor or a control the keyboard
+     has come to, comes to rest this far down, clear of the header. */
   html {
+    --scroll-clearance: var(--spacing-header);
+
     background-color: var(--color-ink);
-    scroll-padding-top: var(--spacing-header);
+    scroll-padding-top: var(--scroll-clearance);
   }
 
   /* Below a laptop's width the Hero Timepiece's frame is held across the
-     top of its page. Whatever the browser brings into view there, as it
-     does a control the keyboard has come to, must come to rest under the
-     frame's foot and not behind it. */
+     top of its page. Whatever the browser brings into view there must come
+     to rest under the frame's foot and not behind it. */
   html:has(.watch-frame) {
     @variant max-lg {
-      scroll-padding-top: calc(
+      --scroll-clearance: calc(
         var(--spacing-header) + var(--watch-frame-height)
       );
     }
+  }
+
+  /* The header is held at the top, so its own controls are always in view.
+     Without this the browser would try to bring one clear of the header
+     too, which only scrolling back to the top can do, and the keyboard
+     Shopper would lose their place on the way up into the navigation. */
+  body > header * {
+    scroll-margin-top: calc(-1 * var(--scroll-clearance));
   }
 
   body {
