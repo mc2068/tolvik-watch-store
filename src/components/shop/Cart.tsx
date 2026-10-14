@@ -128,6 +128,13 @@ export function Cart(catalogue: CartCatalogue) {
                   {formatPrice(priced.total)}
                 </span>
               </p>
+              <Link
+                href="/checkout"
+                onClick={close}
+                className="action-solid mt-6 w-full"
+              >
+                Check out
+              </Link>
             </div>
           </>
         )}

@@ -21,6 +21,9 @@
   --color-platinum-faint: #6b727b;
   /* The accent marks twelve o'clock and whatever the Shopper is pointing at. */
   --color-steel: #7fa3c6;
+  /* What a Shopper must put right in a form: a muted rowan red (8.8:1 on
+     ink), never used for anything else. */
+  --color-alert: #e39b8c;
 
   /* Type: a serif display face with a quiet sans. Loaded in layout.tsx. */
   --font-*: initial;
@@ -378,6 +381,50 @@
     @starting-style {
       opacity: 0;
     }
+  }
+}
+
+/* The one thing a page asks of the Shopper, as a solid button: "Add to
+   cart", "Check out", and each step of the Demo Checkout. Everything else
+   that acts is a quiet outline or a link. */
+@utility action-solid {
+  display: inline-flex;
+  height: 3rem;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-platinum);
+  padding-inline: 1.75rem;
+  color: var(--color-ink);
+  font-size: var(--text-small);
+  line-height: var(--text-small--line-height);
+  letter-spacing: var(--tracking-open);
+  white-space: nowrap;
+  transition: background-color var(--duration-quick) var(--ease-settle);
+
+  &:hover {
+    background-color: var(--color-steel);
+  }
+}
+
+/* A field of a form: a plain outlined box on the page's own black, its
+   label above it. One the Shopper must put right is outlined in the alert
+   colour, with a message under it that says what is wrong. */
+@utility field {
+  height: 3rem;
+  width: 100%;
+  border: 1px solid var(--color-line);
+  background-color: var(--color-ink);
+  padding-inline: 1rem;
+  color: var(--color-platinum);
+  font-size: var(--text-body);
+  transition: border-color var(--duration-quick) var(--ease-settle);
+
+  &:hover {
+    border-color: var(--color-platinum-faint);
+  }
+
+  &[aria-invalid="true"] {
+    border-color: var(--color-alert);
   }
 }
 
