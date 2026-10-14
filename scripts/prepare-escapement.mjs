@@ -2,7 +2,7 @@
 // craftsmanship section shows: public/models/escapement.glb. `npm run
 // models` runs it after the Hero Timepiece.
 //
-// The part names, the animation's name, the file's location and its budget,
+// The piece names, the animation's name, the file's location and its budget,
 // and what scene code may rely on, live in
 // src/components/three/escapement-model.ts, which this script imports.
 
@@ -20,7 +20,7 @@ import { MeshoptEncoder, MeshoptSimplifier } from "meshoptimizer";
 
 import {
   ESCAPEMENT_ANIMATION,
-  ESCAPEMENT_PARTS,
+  ESCAPEMENT_PIECES,
 } from "../src/components/three/escapement-model.ts";
 import { creditLine, escapementModelCredit } from "../src/lib/credits.ts";
 import { readLicensedSource } from "./model-files.mjs";
@@ -33,11 +33,12 @@ export const SOURCE = {
   credit: escapementModelCredit,
 };
 
-// Every node in the source that holds a piece of the escapement, by the name
-// its author gave it, and the part it is. Each holds its mesh in a child of
-// its own, and the animation turns the holder. The author's "fixations" are
-// the bearings the staffs turn in, and "escapement" is the pallet fork alone.
-const SOURCE_PARTS = {
+// Every node in the source that holds one of the escapement's pieces, by
+// the name its author gave it, and the piece it is. Each holds its mesh in
+// a child of its own, and the animation turns the holder. The author's
+// "fixations" are the bearings the staffs turn in, and "escapement" is the
+// pallet fork alone.
+const SOURCE_PIECES = {
   "Balance Wheel": "balance-wheel",
   Hsp0: "hairspring",
   "Balance Axle": "balance-staff",
@@ -56,14 +57,14 @@ const SOURCE_PARTS = {
 const DROPPED = ["Sketchfab_model", "Root", "Lamp"];
 
 // Surfaces are simplified to this share of their triangles, but no surface
-// moves by more than ERROR of its part's size: the hairspring is drawn with
+// moves by more than ERROR of its piece's size: the hairspring is drawn with
 // far more triangles than its coil needs, and the wheels' teeth keep their
 // shape.
 const RATIO = 0.5;
 const ERROR = 0.0005;
 
 // Positions, the hairspring's breathing among them, are stored to this many
-// bits across each part, and normals to this many in each direction.
+// bits across each piece, and normals to this many in each direction.
 const POSITION_BITS = 14;
 const NORMAL_BITS = 10;
 
@@ -71,7 +72,7 @@ const NORMAL_BITS = 10;
 function findHolders(source) {
   const holders = new Map();
   for (const node of source.getRoot().listNodes()) {
-    if (!(node.getName() in SOURCE_PARTS)) continue;
+    if (!(node.getName() in SOURCE_PIECES)) continue;
     const [child, ...others] = node.listChildren();
     if (node.getMesh() || !child?.getMesh() || others.length > 0) {
       throw new Error(`${node.getName()} does not hold one mesh`);
@@ -81,29 +82,29 @@ function findHolders(source) {
     }
     holders.set(node.getName(), node);
   }
-  for (const name of Object.keys(SOURCE_PARTS)) {
+  for (const name of Object.keys(SOURCE_PIECES)) {
     if (!holders.has(name)) throw new Error(`Source node ${name} is missing`);
   }
   return holders;
 }
 
 /**
- * Collects the parts under one root, in their order and named as the site
+ * Collects the pieces under one root, in their order and named as the site
  * names them, and drops every other node.
  */
-function rootParts(source, holders) {
+function rootPieces(source, holders) {
   const root = source.createNode("escapement");
-  for (const part of ESCAPEMENT_PARTS) {
-    const pieces = [...holders]
-      .filter(([name]) => SOURCE_PARTS[name] === part)
+  for (const piece of ESCAPEMENT_PIECES) {
+    const held = [...holders]
+      .filter(([name]) => SOURCE_PIECES[name] === piece)
       .map(([, holder]) => holder);
-    if (pieces.length === 1) {
-      root.addChild(pieces[0].setName(part));
+    if (held.length === 1) {
+      root.addChild(held[0].setName(piece));
       continue;
     }
-    const group = source.createNode(part);
-    pieces.forEach((piece, i) =>
-      group.addChild(piece.setName(`${part}-${i + 1}`)),
+    const group = source.createNode(piece);
+    held.forEach((holder, i) =>
+      group.addChild(holder.setName(`${piece}-${i + 1}`)),
     );
     root.addChild(group);
   }
@@ -120,7 +121,7 @@ function rootParts(source, holders) {
   for (const node of source.getRoot().listNodes()) {
     if (inRoot(node)) continue;
     if (!DROPPED.includes(node.getName())) {
-      throw new Error(`Source node ${node.getName()} is assigned to no part`);
+      throw new Error(`Source node ${node.getName()} is assigned to no piece`);
     }
     node.dispose();
   }
@@ -140,7 +141,7 @@ function frame(root) {
   const at = (name) =>
     root
       .listChildren()
-      .find((part) => part.getName() === name)
+      .find((piece) => piece.getName() === name)
       .getWorldTranslation();
   const [bx, by] = at("balance-wheel");
   const [ex, ey] = at("escape-wheel");
@@ -178,7 +179,7 @@ export async function prepareEscapement(io) {
     );
   }
 
-  const root = rootParts(source, findHolders(source));
+  const root = rootPieces(source, findHolders(source));
   frame(root);
   stripMaterials(source);
 
@@ -196,20 +197,4 @@ export async function prepareEscapement(io) {
   );
   source.createExtension(EXTMeshoptCompression).setRequired(true);
   return source;
-}
-
-/** Triangles in each part, for the report. */
-export function trianglesByPart(model) {
-  const [root] = model.getRoot().getDefaultScene().listChildren();
-  return Object.fromEntries(
-    root.listChildren().map((part) => {
-      let triangles = 0;
-      part.traverse((node) => {
-        for (const primitive of node.getMesh()?.listPrimitives() ?? []) {
-          triangles += primitive.getIndices().getCount() / 3;
-        }
-      });
-      return [part.getName(), triangles];
-    }),
-  );
 }

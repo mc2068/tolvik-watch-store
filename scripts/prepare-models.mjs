@@ -42,14 +42,19 @@ import {
   PARTS,
 } from "../src/components/three/hero-model.ts";
 import { creditLine, heroModelCredit } from "../src/lib/credits.ts";
-import { packNormals, readLicensedSource, repo } from "./model-files.mjs";
+import {
+  packNormals,
+  readLicensedSource,
+  repo,
+  trianglesByChild,
+} from "./model-files.mjs";
 import {
   prepareEscapement,
   SOURCE as ESCAPEMENT_SOURCE,
-  trianglesByPart as escapementTriangles,
 } from "./prepare-escapement.mjs";
 
-// The only download this script opens, and the credit its licence asks for.
+// The Hero Timepiece's download, and the credit its licence asks for. The
+// escapement's is named in prepare-escapement.mjs; no other is ever opened.
 // models-raw/ also holds a "Luxury Wristwatch" that copies a real brand's
 // watch; it must never be named here.
 const SOURCE = {
@@ -337,10 +342,6 @@ function splitHands(fused, post) {
 // Source to prepared model
 // ---------------------------------------------------------------------------
 
-function readSource(io) {
-  return readLicensedSource(io, SOURCE);
-}
-
 /** Reads every source mesh, insisting each one belongs to exactly one part. */
 function readMeshes(source) {
   const meshes = new Map();
@@ -442,20 +443,6 @@ function buildModel(parts, hands, sourceAsset) {
   return model;
 }
 
-function trianglesByPart(model) {
-  const [root] = model.getRoot().getDefaultScene().listChildren();
-  return Object.fromEntries(
-    root.listChildren().map((part) => {
-      let triangles = 0;
-      part.traverse((node) => {
-        const [primitive] = node.getMesh()?.listPrimitives() ?? [];
-        if (primitive) triangles += primitive.getIndices().getCount() / 3;
-      });
-      return [part.getName(), triangles];
-    }),
-  );
-}
-
 async function main() {
   await Promise.all([
     MeshoptEncoder.ready,
@@ -474,7 +461,7 @@ async function main() {
       "meshopt.decoder": MeshoptDecoder,
     });
 
-  const source = await readSource(io);
+  const source = await readLicensedSource(io, SOURCE);
   const meshes = readMeshes(source);
   const toStandardFrame = standardFrame(meshes);
 
@@ -511,14 +498,14 @@ async function main() {
     model.createExtension(EXTMeshoptCompression).setRequired(true);
     report[version] = {
       file: await io.writeBinary(model),
-      parts: trianglesByPart(model),
+      parts: trianglesByChild(model),
     };
   }
 
   const escapementModel = await prepareEscapement(io);
   const escapement = {
     file: await io.writeBinary(escapementModel),
-    parts: escapementTriangles(escapementModel),
+    parts: trianglesByChild(escapementModel),
   };
 
   printReport(meshes, report);

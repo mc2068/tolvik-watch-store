@@ -7,7 +7,7 @@ import {
   useGLTF,
 } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import {
   AnimationClip,
   AnimationMixer,
@@ -19,10 +19,11 @@ import { createEscapementMaterials } from "@/components/three/escapement-materia
 import {
   ESCAPEMENT_ANIMATION,
   ESCAPEMENT_MODEL,
-  ESCAPEMENT_PARTS,
+  ESCAPEMENT_PIECES,
   ESCAPEMENT_VIEW,
-  type EscapementPart,
+  type EscapementPiece,
 } from "@/components/three/escapement-model";
+import { FirstFrame, LostContext } from "@/components/three/scene-signals";
 import { token } from "@/lib/tokens";
 
 // The camera: a long lens, as for the Hero Timepiece, looking down on the
@@ -151,17 +152,19 @@ function Studio() {
   );
 }
 
-/** The part a mesh belongs to: the ancestor that is a child of the root. */
-function partOf(mesh: Object3D): EscapementPart {
-  let part = mesh;
-  while (part.parent && part.parent.name !== "escapement") part = part.parent;
-  if (!(ESCAPEMENT_PARTS as readonly string[]).includes(part.name)) {
-    throw new Error(`The escapement has no part named ${part.name}`);
+/** The piece a mesh belongs to: the ancestor that is a child of the root. */
+function pieceOf(mesh: Object3D): EscapementPiece {
+  let piece = mesh;
+  while (piece.parent && piece.parent.name !== "escapement") {
+    piece = piece.parent;
   }
-  return part.name as EscapementPart;
+  if (!(ESCAPEMENT_PIECES as readonly string[]).includes(piece.name)) {
+    throw new Error(`The escapement has no piece named ${piece.name}`);
+  }
+  return piece.name as EscapementPiece;
 }
 
-/** The escapement, each part finished, playing its animation. */
+/** The escapement, each piece finished, playing its animation. */
 function Escapement({
   playing,
   heldAt,
@@ -179,7 +182,7 @@ function Escapement({
   useEffect(() => {
     scene.traverse((node) => {
       const mesh = node as Mesh;
-      if (mesh.isMesh) mesh.material = materials[partOf(mesh)];
+      if (mesh.isMesh) mesh.material = materials[pieceOf(mesh)];
     });
     return () => {
       for (const material of Object.values(materials)) material.dispose();
@@ -213,32 +216,4 @@ function Escapement({
       <primitive object={scene} />
     </group>
   );
-}
-
-/**
- * Tells the section when the browser drops the scene, so the Still comes
- * back in its place.
- */
-function LostContext({ onLost }: { onLost: () => void }) {
-  const canvas = useThree((three) => three.gl.domElement);
-
-  useEffect(() => {
-    canvas.addEventListener("webglcontextlost", onLost);
-    return () => canvas.removeEventListener("webglcontextlost", onLost);
-  }, [canvas, onLost]);
-
-  return null;
-}
-
-/** Tells the section when the escapement has been drawn. */
-function FirstFrame({ onDrawn }: { onDrawn: () => void }) {
-  const told = useRef(false);
-
-  useFrame(() => {
-    if (told.current) return;
-    told.current = true;
-    onDrawn();
-  });
-
-  return null;
 }

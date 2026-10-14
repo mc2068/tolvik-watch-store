@@ -1,6 +1,6 @@
 // What every model `npm run models` prepares goes through: reading its
 // download, with the licence checked against the credit the site records,
-// and packing its normals for the file.
+// packing its normals for the file, and counting its triangles.
 
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
@@ -59,4 +59,23 @@ export function packNormals(model) {
       normal.setArray(packed).setNormalized(true);
     }
   }
+}
+
+/**
+ * The triangles under each child of a prepared model's root, by the
+ * child's name, for the report `npm run models` prints.
+ */
+export function trianglesByChild(model) {
+  const [root] = model.getRoot().getDefaultScene().listChildren();
+  return Object.fromEntries(
+    root.listChildren().map((child) => {
+      let triangles = 0;
+      child.traverse((node) => {
+        for (const primitive of node.getMesh()?.listPrimitives() ?? []) {
+          triangles += primitive.getIndices().getCount() / 3;
+        }
+      });
+      return [child.getName(), triangles];
+    }),
+  );
 }

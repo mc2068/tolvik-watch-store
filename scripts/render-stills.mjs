@@ -26,10 +26,10 @@
 // Each Still is a photograph of the real thing. The script builds the site
 // with its studio open: a page that plays Home's 3D acts with any Timepiece,
 // in its own Finish, another that plays them with the Hero Timepiece in
-// any Colourway, and a third that holds the escapement still. It serves that build, opens each studio in turn in
-// a headless browser, waits for the scene, scrolls to where the acts hold
-// the watch as each view wants it and captures the square the camera
-// composes the watch in. Rendered from the scene itself, the opening Still
+// any Colourway, and a third that holds the escapement still. It serves
+// that build, opens each studio in turn in a headless browser, waits for
+// the scene, scrolls to where the acts hold the watch as each view wants it
+// and captures the square the camera composes the watch in. Rendered from the scene itself, the opening Still
 // matches the canvas that replaces it on Home in all but the time on the
 // dial.
 //

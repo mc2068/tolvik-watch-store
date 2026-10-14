@@ -15,7 +15,7 @@ import {
   ESCAPEMENT_ANIMATION,
   ESCAPEMENT_MODEL,
   ESCAPEMENT_MODEL_BUDGET,
-  ESCAPEMENT_PARTS,
+  ESCAPEMENT_PIECES,
 } from "@/components/three/escapement-model";
 import { creditLine, escapementModelCredit } from "@/lib/credits";
 
@@ -51,36 +51,36 @@ function centre(node: Node): number[] {
   return min.map((low, axis) => (low + max[axis]) / 2);
 }
 
-test("is made of the named parts and nothing else", () => {
+test("is made of the named pieces and nothing else", () => {
   const scene = model.getRoot().getDefaultScene()!;
   const [root, ...others] = scene.listChildren();
   expect(others).toHaveLength(0);
   expect(root.getName()).toBe("escapement");
-  expect(root.listChildren().map((part) => part.getName())).toEqual([
-    ...ESCAPEMENT_PARTS,
+  expect(root.listChildren().map((piece) => piece.getName())).toEqual([
+    ...ESCAPEMENT_PIECES,
   ]);
 });
 
-/** The part a node belongs to: itself, or the ancestor just under the root. */
-function partOf(node: Node): string {
-  let part = node;
-  while (part.getParentNode()?.getName() !== "escapement") {
-    part = part.getParentNode()!;
+/** The piece a node belongs to: itself, or the ancestor just under the root. */
+function pieceOf(node: Node): string {
+  let piece = node;
+  while (piece.getParentNode()?.getName() !== "escapement") {
+    piece = piece.getParentNode()!;
   }
-  return part.getName();
+  return piece.getName();
 }
 
-test("holds each part's pieces beneath it, the banking pins two", () => {
-  for (const part of ESCAPEMENT_PARTS) {
+test("holds each piece's pieces beneath it, the banking pins two", () => {
+  for (const piece of ESCAPEMENT_PIECES) {
     const meshes: Node[] = [];
-    nodeNamed(part).traverse((node) => {
+    nodeNamed(piece).traverse((node) => {
       if (node.getMesh()) meshes.push(node);
     });
-    expect(meshes, part).toHaveLength(part === "banking-pins" ? 2 : 1);
+    expect(meshes, piece).toHaveLength(piece === "banking-pins" ? 2 : 1);
   }
 });
 
-test("plays its own animation, which moves the parts", () => {
+test("plays its own animation, which moves the pieces", () => {
   const animations = model.getRoot().listAnimations();
   expect(animations.map((animation) => animation.getName())).toEqual([
     ESCAPEMENT_ANIMATION,
@@ -91,7 +91,7 @@ test("plays its own animation, which moves the parts", () => {
       .listChannels()
       .map(
         (channel) =>
-          `${partOf(channel.getTargetNode()!)} ${channel.getTargetPath()}`,
+          `${pieceOf(channel.getTargetNode()!)} ${channel.getTargetPath()}`,
       ),
   );
   for (const motion of [
@@ -106,7 +106,7 @@ test("plays its own animation, which moves the parts", () => {
     expect(moved, motion).toContain(motion);
   }
   for (const target of moved) {
-    expect(ESCAPEMENT_PARTS, target).toContain(target.split(" ")[0]);
+    expect(ESCAPEMENT_PIECES, target).toContain(target.split(" ")[0]);
   }
 });
 
@@ -130,7 +130,7 @@ test("lies across the frame, the balance nearest and on the left", () => {
   expect(balance[2]).toBeGreaterThan(fork[2]);
 });
 
-test("carries no material or texture, so each part is finished in code", () => {
+test("carries no material or texture, so each piece is finished in code", () => {
   expect(model.getRoot().listMaterials()).toHaveLength(0);
   expect(model.getRoot().listTextures()).toHaveLength(0);
 });

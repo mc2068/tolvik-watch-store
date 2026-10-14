@@ -1,29 +1,30 @@
 // The escapement model as `npm run models` prepares it: the close-up in
 // Home's craftsmanship section of what keeps a mechanical watch running.
-// The part names are set here, once: the prepare script imports them, and
-// scene code addresses the model through them, never through the source
-// file's names.
+// The names of its pieces are set here, once: the prepare script imports
+// them, and scene code addresses the model through them, never through the
+// source file's names.
 //
 // What the scene may rely on:
-//   - One root node, `escapement`, holds the parts and nothing else.
+//   - One root node, `escapement`, holds the pieces and nothing else.
 //   - The escapement lies along X and is seen from +Z, as through a watch's
 //     open caseback: the balance wheel on the left, under its hairspring and
 //     above the pallet fork, and the escape wheel on the right.
 //   - The origin is the middle of the escapement, and it is 2 units across.
-//   - Each part is one named node, with its mesh in an unnamed node beneath
-//     it; the banking pins, two pieces, have two. A part is finished by
-//     giving every mesh under it the part's material.
+//   - Each piece is one named node, with its mesh in an unnamed node beneath
+//     it; the banking pins, a pair, have two. A piece is finished by giving
+//     every mesh under it the piece's material. (They are pieces, not
+//     Parts: Parts are the Hero Timepiece's seven layers.)
 //   - The animation `ESCAPEMENT_ANIMATION` lasts under seven seconds and is
 //     played on a loop: the balance swings, the fork rocks and the escape
-//     wheel advances a tooth at a time. It turns the parts' own nodes, and
+//     wheel advances a tooth at a time. It turns the pieces' own nodes, and
 //     the hairspring breathes by a morph target on its mesh.
 //   - No mesh carries a material. Some of the source's surfaces are open,
 //     so every material is double-sided.
 //   - The file is quantized and meshopt-compressed. drei's `useGLTF` reads
 //     both without any extra setup.
 
-/** The parts, from the balance at one end of the escapement to the other. */
-export const ESCAPEMENT_PARTS = [
+/** The pieces, from the balance at one end of the escapement to the other. */
+export const ESCAPEMENT_PIECES = [
   "balance-wheel",
   "hairspring",
   "balance-staff",
@@ -35,7 +36,7 @@ export const ESCAPEMENT_PARTS = [
   "bearings",
 ] as const;
 
-export type EscapementPart = (typeof ESCAPEMENT_PARTS)[number];
+export type EscapementPiece = (typeof ESCAPEMENT_PIECES)[number];
 
 /** The animation the model comes with, by the name its author gave it. */
 export const ESCAPEMENT_ANIMATION = "Oscillating mechanism";
