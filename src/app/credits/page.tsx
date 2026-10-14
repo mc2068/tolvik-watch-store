@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
+import { SiteCredit } from "@/components/ui/SiteCredit";
 import { creditLine, modelCredits } from "@/lib/credits";
-import { site } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Credits",
@@ -70,11 +70,7 @@ export default function CreditsPage() {
 
         <CreditsSection id="site" heading="This site">
           <p>
-            {site.credit.lead}{" "}
-            <a href={site.credit.href} className="text-link">
-              {site.credit.name}
-            </a>
-            . All rights reserved. The 3D models remain under their own
+            <SiteCredit />. All rights reserved. The 3D models remain under their own
             licences.
           </p>
         </CreditsSection>

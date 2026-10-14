@@ -31,9 +31,10 @@ const sans = Schibsted_Grotesk({
 // Next offers for every page under it.
 //
 // A shared link needs the image's full address, so `metadataBase` names the
-// address the site is deployed at, which Vercel gives the build. A preview
-// deployment uses its own address instead, and a build anywhere else this
-// machine's.
+// address the site is deployed at, which Vercel gives the build, and a build
+// anywhere else this machine's. Vercel sets the production address on a
+// preview deployment too, but Next gives an image made by its file
+// convention, as this one is, the preview's own address there.
 const deployedAt = process.env.VERCEL_PROJECT_PRODUCTION_URL;
 
 export const metadata: Metadata = {
