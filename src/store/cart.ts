@@ -1,3 +1,4 @@
+import { useSyncExternalStore } from "react";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
@@ -62,3 +63,20 @@ export const useCart = create<Cart>()(
     },
   ),
 );
+
+const onRestored = (restored: () => void) =>
+  useCart.persist.onFinishHydration(restored);
+const isRestored = () => useCart.persist.hasHydrated();
+const notYetRestored = () => false;
+
+/**
+ * Whether the cart has been brought back from the Shopper's browser. Until
+ * it has, the cart reads empty, as the server rendered it, so a page that
+ * acts on an empty cart waits for this first: an empty cart it saw before
+ * then may not be empty at all.
+ */
+export function useCartRestored(): boolean {
+  // The server has no stored cart to bring back, so on the server, and in
+  // the browser's first render that must match it, the answer is no.
+  return useSyncExternalStore(onRestored, isRestored, notYetRestored);
+}
