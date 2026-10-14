@@ -77,7 +77,7 @@ Do not invent new ones. For React Three Fiber, drei, Zustand and Next.js, read t
 
 - Pages (`src/app`): routing, metadata and page composition. Server components by default. A Timepiece's page is at `/collection/<slug>`; build a link to one with `timepiecePath` in `src/lib/site.ts`.
 - Catalogue (`src/lib/catalogue.ts` over `src/data`): the only way anything reads Timepiece data.
-- Cart (`src/store/cart.ts`): the Shopper's cart, kept in their browser.
+- Cart (`src/store/cart.ts`): the Shopper's cart, kept in their browser. Its lines and every sum done on them are pure functions in `src/store/cart-lines.ts`. `Cart` in `src/components/shop` is both its button in the header and the panel that slides out; the header hands it the Catalogue's Timepieces and Colourways, which it names and prices the lines from.
 - 3D (`src/components/three`): the canvas, the Hero Timepiece, its parts, materials, clock and Pose.
 - Sections (`src/components/home`, `shop`, `ui`): one component per act, section or widget.
 - Model tooling (`scripts/`): offline scripts that turn `models-raw/` into `public/models/` and render stills. `npm run models` prepares the Hero Timepiece and its lighter phone model; `src/components/three/hero-model.ts` sets the part names and says what scene code may rely on. `npm run stills` builds the site with its studio open and photographs every Timepiece in the live scene, in its own Finish, and the Hero Timepiece in each Colourway, into `public/stills/`.
@@ -166,6 +166,7 @@ You cannot infer these from the code, so keep them in mind.
 - In the Exploded View the scene decides where each Part's name stands. Its frame loop writes the places to `src/lib/part-labels.ts` and the act's section moves the names there, over the watch's box (`watch-box` in `globals.css`). Until a scene has placed them, and always under reduced motion, the same list is a plain line of names in the act's copy.
 - The studio is lit for a watch that faces the Shopper, so it turns with the watch through the turn act (`scene.environmentRotation`). Check a change to the lighting in profile as well as at rest.
 - The browser suite's Chromium has no graphics card and draws the scene in software. It is slow, and a screenshot taken there of a canvas that has since scrolled can come out blank; judge the 3D in a real browser.
+- The header is held at the top of the page, which has scroll padding for it, so Playwright's `click()` on anything in the header first scrolls a page that is not at its top. A browser test that cares where the page is clicks there by coordinates. That Chromium also hides scrollbars: `scrollbar-gutter`, which keeps the page still while the cart is open, takes room there that a real browser's scrollbar already had.
 - `.claude/skills/` is git-ignored. On a fresh clone, restore the skills listed in `skills-lock.json` with the skills CLI.
 - scroll-craft's `scripts/kie.mjs` uploads to a paid image service. Never run it.
 - Use `min-h-[100dvh]`, not `h-screen`, for full-height sections; mobile browsers resize the viewport as their toolbars move. The Stage and its Acts are the exception: they are sized in `lvh`, which never changes, because a canvas that resized mid-scroll would stutter. The first screen's copy is set in `svh` so it is in view with the toolbars out. The tokens in `globals.css` say which is which.
