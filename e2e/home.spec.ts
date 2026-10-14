@@ -283,6 +283,77 @@ test("Home states Tolvik's craftsmanship in real text", async ({ page }) => {
   }
 });
 
+test.describe("the escapement close-up", () => {
+  const escapement = (page: Page) =>
+    page.getByRole("img", { name: "A Swiss lever escapement at work" });
+
+  test("Home shows what is inside the watch, named in real text", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    const craftsmanship = page.getByRole("region", {
+      name: "Made to be read in the dark.",
+    });
+
+    await expect(
+      craftsmanship.getByRole("heading", { level: 3 }),
+    ).toHaveText("The beat inside.");
+    for (const part of ["balance wheel", "hairspring", "escape wheel"]) {
+      await expect(craftsmanship).toContainText(part);
+    }
+    await expect(craftsmanship.getByRole("img")).toHaveAccessibleName(
+      /A Swiss lever escapement at work/,
+    );
+  });
+
+  test("is a still until the Shopper nears it, then plays in 3D", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    // A screen and more away, nothing of the scene is loaded.
+    await expect(escapement(page).locator("img")).toBeVisible();
+    await expect(escapement(page).locator("canvas")).toHaveCount(0);
+
+    await escapement(page).scrollIntoViewIfNeeded();
+    await expect(escapement(page)).toHaveAttribute(
+      "data-escapement",
+      "ready",
+      { timeout: 30_000 },
+    );
+    await expect(escapement(page).locator("canvas")).toBeVisible();
+  });
+
+  test("holds still for a Shopper who prefers reduced motion", async ({
+    page,
+  }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/");
+
+    await escapement(page).scrollIntoViewIfNeeded();
+    await page.waitForTimeout(700);
+
+    await expect(escapement(page).locator("img")).toBeVisible();
+    await expect(escapement(page).locator("canvas")).toHaveCount(0);
+  });
+});
+
+test("Home closes on Tolvik's character and one action", async ({ page }) => {
+  await page.goto("/");
+  const close = page.getByRole("region", { name: "Your hour, in steel." });
+
+  await expect(close.getByRole("heading", { level: 2 })).toHaveText(
+    "Your hour, in steel.",
+  );
+  await expect(close).toContainText("Tolvik is a small workshop");
+  await expect(close.getByRole("link")).toHaveText(["View the Collection"]);
+  await expect(close.getByRole("link")).toHaveAttribute("href", "/collection");
+
+  // Nothing follows it but the footer.
+  await expect(page.getByRole("main").getByRole("heading").last()).toHaveText(
+    "Your hour, in steel.",
+  );
+});
+
 test("Home loads without a console error", async ({ page }) => {
   const errors: string[] = [];
   page.on("console", (message) => {

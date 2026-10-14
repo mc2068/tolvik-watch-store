@@ -1,6 +1,7 @@
 // Renders the Stills: three of each Timepiece in the Catalogue, one of each
 // view, and more of the Hero Timepiece: its opening, and one from the front
-// in each Colourway.
+// in each Colourway. And one of the escapement, for the craftsmanship
+// section.
 //
 //   public/stills/<name>.webp                   from the front: the watch
 //                                               arrived and lit
@@ -13,6 +14,8 @@
 //   public/stills/hero-timepiece-<colourway>.webp
 //                                               from the front, in that
 //                                               Colourway
+//   public/stills/escapement.webp               the escapement, held at one
+//                                               moment of its animation
 //
 // The Catalogue says where each Still goes. The Hero Timepiece's are filed
 // under `hero-timepiece`, and Home shows the one from the front where there
@@ -22,18 +25,18 @@
 //
 // Each Still is a photograph of the real thing. The script builds the site
 // with its studio open: a page that plays Home's 3D acts with any Timepiece,
-// in its own Finish, and another that plays them with the Hero Timepiece in
-// any Colourway. It serves that build, opens each studio in turn in
-// a headless browser, waits for the scene, scrolls to where the acts hold
-// the watch as each view wants it and captures the square the camera
-// composes the watch in. Rendered from the scene itself, the opening Still
+// in its own Finish, another that plays them with the Hero Timepiece in
+// any Colourway, and a third that holds the escapement still. It serves
+// that build, opens each studio in turn in a headless browser, waits for
+// the scene, scrolls to where the acts hold the watch as each view wants it
+// and captures the square the camera composes the watch in. Rendered from the scene itself, the opening Still
 // matches the canvas that replaces it on Home in all but the time on the
 // dial.
 //
 // Like `npm run models` it runs offline, on a developer's machine, and its
 // outputs are committed. Run it again whenever the model, its materials, the
-// lighting, the camera, the acts, a Timepiece's Finish or a Colourway
-// changes. It ends by
+// lighting, the camera, the acts, a Timepiece's Finish, a Colourway or the
+// escapement's scene changes. It ends by
 // building the site once more with the studio closed, so the build it leaves
 // in `.next` is the one a Shopper gets.
 
@@ -45,6 +48,7 @@ import { fileURLToPath } from "node:url";
 
 import { chromium } from "@playwright/test";
 
+import { ESCAPEMENT_STILL } from "../src/components/three/escapement-model.ts";
 import { HERO_OPENING_STILL } from "../src/components/three/hero-model.ts";
 import { listColourways, listTimepieces } from "../src/lib/catalogue.ts";
 
@@ -55,6 +59,9 @@ const nextCli = "node_modules/next/dist/bin/next";
 // on a high-density screen. Next serves smaller copies to smaller screens.
 const SIDE = 1600;
 const QUALITY = 0.9;
+// The escapement's Still is this many pixels wide, and as tall as the
+// scene's view is for that width: twice what its studio room draws.
+const ESCAPEMENT_WIDTH = 1800;
 // Two device pixels to each CSS pixel, so the square is half of SIDE on the
 // page.
 const DENSITY = 2;
@@ -131,17 +138,24 @@ async function capture(page, figure) {
       `The Stage's square is ${side * DENSITY}px, expected ${SIDE}px`,
     );
   }
-  const clip = {
+  return captureAtRest(page, {
     x: stage.x + (stage.width - side) / 2,
     y: stage.y + (stage.height - side) / 2,
     width: side,
     height: side,
-  };
+  });
+}
 
+/**
+ * Photographs `clip` of the page once what is drawn there has come to rest,
+ * and encodes it as WebP.
+ */
+async function captureAtRest(page, clip) {
   // The act eases the watch into place after the scroll that asked for it,
   // and a browser drawing in software takes its time over each frame. So
-  // the square is photographed until three in a row come out alike: with
-  // the dial's time held, a watch at rest draws the same frame every time.
+  // the clip is photographed until three in a row come out alike: with
+  // the dial's time held, a watch at rest draws the same frame every time,
+  // and so does the escapement held at one moment.
   let png;
   for (let alike = 0, attempt = 0; alike < 2; attempt++) {
     if (attempt === 60) throw new Error("The watch never came to rest.");
@@ -175,7 +189,7 @@ function write(still, bytes) {
   mkdirSync(path.dirname(file), { recursive: true });
   writeFileSync(file, bytes);
   const kb = Math.round(bytes.byteLength / 1024);
-  console.log(`Wrote public${still} (${SIDE}px square, ${kb} KB)`);
+  console.log(`Wrote public${still} (${kb} KB)`);
 }
 
 /**
@@ -269,6 +283,36 @@ async function photograph(
   await page.close();
 }
 
+/**
+ * Photographs the escapement in its studio room, held at one moment, and
+ * writes its Still.
+ */
+async function photographEscapement(browser, site) {
+  const page = await browser.newPage({
+    viewport: { width: 1400, height: 900 },
+    deviceScaleFactor: DENSITY,
+  });
+  await page.goto(`${site.url}/studio/escapement`);
+  const figure = page.locator('[data-escapement="ready"]');
+  await figure.waitFor({ timeout: 60_000 });
+  await page.addStyleTag({
+    content: `
+      body * { visibility: hidden !important; }
+      [data-escapement] canvas { visibility: visible !important; }
+      [data-escapement] * { opacity: 1 !important; transition: none !important; }
+    `,
+  });
+
+  const clip = await figure.boundingBox();
+  if (clip.width * DENSITY !== ESCAPEMENT_WIDTH) {
+    throw new Error(
+      `The escapement is drawn ${clip.width * DENSITY}px wide, expected ${ESCAPEMENT_WIDTH}px`,
+    );
+  }
+  write(ESCAPEMENT_STILL, await captureAtRest(page, clip));
+  await page.close();
+}
+
 async function main() {
   buildSite({ studio: true });
   const site = await serveBuiltSite();
@@ -297,6 +341,7 @@ async function main() {
         stills: [still],
       });
     }
+    await photographEscapement(browser, site);
   } finally {
     await browser.close();
     site.stop();

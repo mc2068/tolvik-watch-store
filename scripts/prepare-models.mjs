@@ -1,5 +1,7 @@
-// Turns the source download in models-raw/ into the Hero Timepiece model the
-// site ships: public/models/hero-timepiece.glb and a lighter one for phones.
+// Turns the source downloads in models-raw/ into the models the site ships:
+// the Hero Timepiece, public/models/hero-timepiece.glb and a lighter one for
+// phones, and the escapement the craftsmanship section shows, prepared by
+// prepare-escapement.mjs.
 //
 //   npm run models
 //
@@ -7,12 +9,12 @@
 // neither the browser nor the Vercel build ever runs it.
 //
 // The part names, the file locations and what scene code may rely on in the
-// prepared model live in src/components/three/hero-model.ts, which this
-// script imports. Node 22.18 or later runs that TypeScript file as it is.
+// prepared Hero Timepiece live in src/components/three/hero-model.ts, which
+// this script imports. Node 22.18 or later runs that TypeScript file as it
+// is.
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 
 import { Document, Logger, NodeIO } from "@gltf-transform/core";
 import {
@@ -22,13 +24,16 @@ import {
   KHRMeshQuantization,
 } from "@gltf-transform/extensions";
 import { reorder, simplify, weld } from "@gltf-transform/functions";
-import { unzipSync } from "fflate";
 import {
   MeshoptDecoder,
   MeshoptEncoder,
   MeshoptSimplifier,
 } from "meshoptimizer";
 
+import {
+  ESCAPEMENT_MODEL,
+  ESCAPEMENT_MODEL_BUDGET,
+} from "../src/components/three/escapement-model.ts";
 import {
   HAND_CAP,
   HANDS,
@@ -37,10 +42,19 @@ import {
   PARTS,
 } from "../src/components/three/hero-model.ts";
 import { creditLine, heroModelCredit } from "../src/lib/credits.ts";
+import {
+  packNormals,
+  readLicensedSource,
+  repo,
+  trianglesByChild,
+} from "./model-files.mjs";
+import {
+  prepareEscapement,
+  SOURCE as ESCAPEMENT_SOURCE,
+} from "./prepare-escapement.mjs";
 
-const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-
-// The only download this script opens, and the credit its licence asks for.
+// The Hero Timepiece's download, and the credit its licence asks for. The
+// escapement's is named in prepare-escapement.mjs; no other is ever opened.
 // models-raw/ also holds a "Luxury Wristwatch" that copies a real brand's
 // watch; it must never be named here.
 const SOURCE = {
@@ -328,34 +342,6 @@ function splitHands(fused, post) {
 // Source to prepared model
 // ---------------------------------------------------------------------------
 
-async function readSource(io) {
-  const { archive, credit } = SOURCE;
-  if (!existsSync(path.join(repo, archive))) {
-    throw new Error(
-      `${archive} is missing. Download "${credit.title}" in glTF format from ${credit.source} and save the zip there.`,
-    );
-  }
-  const files = unzipSync(readFileSync(path.join(repo, archive)));
-  const text = (name) => new TextDecoder().decode(files[name]);
-
-  // The licence file names the model and spells out the credit it requires.
-  // Both must match what src/lib/credits.ts records for the credits page.
-  const licence = text("license.txt");
-  if (!licence.includes(`title:\t${credit.title}`)) {
-    throw new Error(`${archive} is not "${credit.title}"`);
-  }
-  if (!licence.includes(creditLine(credit))) {
-    throw new Error(
-      `The credit line in ${archive} differs from the one in src/lib/credits.ts`,
-    );
-  }
-
-  return io.readJSON({
-    json: JSON.parse(text("scene.gltf")),
-    resources: { "scene.bin": files["scene.bin"] },
-  });
-}
-
 /** Reads every source mesh, insisting each one belongs to exactly one part. */
 function readMeshes(source) {
   const meshes = new Map();
@@ -457,34 +443,6 @@ function buildModel(parts, hands, sourceAsset) {
   return model;
 }
 
-/** Stores normals as 16-bit numbers: half the bytes, no visible banding. */
-function packNormals(model) {
-  model.createExtension(KHRMeshQuantization).setRequired(true);
-  for (const mesh of model.getRoot().listMeshes()) {
-    for (const primitive of mesh.listPrimitives()) {
-      const normal = primitive.getAttribute("NORMAL");
-      const packed = Int16Array.from(normal.getArray(), (n) =>
-        Math.round(n * 32767),
-      );
-      normal.setArray(packed).setNormalized(true);
-    }
-  }
-}
-
-function trianglesByPart(model) {
-  const [root] = model.getRoot().getDefaultScene().listChildren();
-  return Object.fromEntries(
-    root.listChildren().map((part) => {
-      let triangles = 0;
-      part.traverse((node) => {
-        const [primitive] = node.getMesh()?.listPrimitives() ?? [];
-        if (primitive) triangles += primitive.getIndices().getCount() / 3;
-      });
-      return [part.getName(), triangles];
-    }),
-  );
-}
-
 async function main() {
   await Promise.all([
     MeshoptEncoder.ready,
@@ -503,7 +461,7 @@ async function main() {
       "meshopt.decoder": MeshoptDecoder,
     });
 
-  const source = await readSource(io);
+  const source = await readLicensedSource(io, SOURCE);
   const meshes = readMeshes(source);
   const toStandardFrame = standardFrame(meshes);
 
@@ -540,37 +498,59 @@ async function main() {
     model.createExtension(EXTMeshoptCompression).setRequired(true);
     report[version] = {
       file: await io.writeBinary(model),
-      parts: trianglesByPart(model),
+      parts: trianglesByChild(model),
     };
   }
 
-  printReport(meshes, report);
+  const escapementModel = await prepareEscapement(io);
+  const escapement = {
+    file: await io.writeBinary(escapementModel),
+    parts: trianglesByChild(escapementModel),
+  };
 
-  // Nothing is written unless both models fit, so a run that goes over
+  printReport(meshes, report);
+  printEscapementReport(escapement);
+
+  // Nothing is written unless every model fits, so a run that goes over
   // budget leaves the committed files as they were.
-  const over = Object.keys(report).filter(
-    (version) => report[version].file.byteLength > HERO_MODEL_BUDGET[version],
-  );
+  const files = [
+    ...Object.keys(report).map((version) => ({
+      name: outputFile(version),
+      bytes: report[version].file,
+      budget: HERO_MODEL_BUDGET[version],
+    })),
+    {
+      name: `public${ESCAPEMENT_MODEL}`,
+      bytes: escapement.file,
+      budget: ESCAPEMENT_MODEL_BUDGET,
+    },
+  ];
+  const over = files.filter(({ bytes, budget }) => bytes.byteLength > budget);
   if (over.length > 0) {
-    throw new Error(`Over the download budget, nothing written: ${over}`);
+    throw new Error(
+      `Over the download budget, nothing written: ${over.map(({ name }) => name)}`,
+    );
   }
-  for (const version of Object.keys(report)) {
-    const file = path.join(repo, outputFile(version));
+  for (const { name, bytes } of files) {
+    const file = path.join(repo, name);
     mkdirSync(path.dirname(file), { recursive: true });
-    writeFileSync(file, report[version].file);
+    writeFileSync(file, bytes);
   }
-  console.log(`Wrote ${outputFile("main")}\n      ${outputFile("phone")}\n`);
+  console.log(`Wrote ${files.map(({ name }) => name).join("\n      ")}\n`);
 }
 
+const kb = (bytes) => `${Math.round(bytes / 1024)} KB`;
+
+/** One line of a report's table: a name, then figures lined up on the right. */
+const row = (cells) =>
+  cells
+    .map((cell, i) =>
+      i === 0 ? String(cell).padEnd(28) : String(cell).padStart(10),
+    )
+    .join("");
+
 function printReport(meshes, report) {
-  const kb = (bytes) => `${Math.round(bytes / 1024)} KB`;
   const total = (parts) => Object.values(parts).reduce((a, b) => a + b, 0);
-  const row = (cells) =>
-    cells
-      .map((cell, i) =>
-        i === 0 ? String(cell).padEnd(28) : String(cell).padStart(10),
-      )
-      .join("");
   const { main, phone } = report;
 
   console.log(`\nSource: ${SOURCE.credit.title}\n        ${SOURCE.archive}\n`);
@@ -594,6 +574,24 @@ function printReport(meshes, report) {
   );
   console.log(
     `\nCredit line, for the credits page and the README:\n${creditLine(SOURCE.credit)}\n`,
+  );
+}
+
+function printEscapementReport({ file, parts }) {
+  const { credit, archive } = ESCAPEMENT_SOURCE;
+
+  console.log(`Source: ${credit.title}\n        ${archive}\n`);
+  console.log(row(["Part", "Triangles"]));
+  for (const [part, triangles] of Object.entries(parts)) {
+    console.log(row([part, triangles]));
+  }
+  console.log(
+    row(["Triangles", Object.values(parts).reduce((a, b) => a + b, 0)]),
+  );
+  console.log(row(["File size", kb(file.byteLength)]));
+  console.log(row(["Phone budget", kb(ESCAPEMENT_MODEL_BUDGET)]));
+  console.log(
+    `\nCredit line, for the credits page and the README:\n${creditLine(credit)}\n`,
   );
 }
 

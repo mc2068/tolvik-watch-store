@@ -1,4 +1,5 @@
 import { DialTrack } from "@/components/home/DialTrack";
+import { EscapementCloseUp } from "@/components/home/EscapementCloseUp";
 
 const principles = [
   {
@@ -62,6 +63,27 @@ export function Craftsmanship() {
             </div>
           ))}
         </dl>
+
+        {/* Behind the caseback: the escapement as a plate across the page,
+            wider than anything above it, with its caption set under it. On
+            a phone it runs to the screen's edges. */}
+        <div className="mt-section">
+          <EscapementCloseUp className="-mx-gutter aspect-4/3 md:mx-0 md:aspect-16/9 lg:aspect-21/9" />
+          <div className="mt-10 grid gap-y-6 md:mt-14 md:grid-cols-12 md:gap-x-8">
+            <h3
+              id="escapement-heading"
+              className="font-display text-title md:col-span-5"
+            >
+              The beat inside.
+            </h3>
+            <p className="max-w-measure text-platinum-dim md:col-span-7 md:pt-2">
+              Open the caseback and this is what moves. The balance wheel
+              swings on its blued hairspring, and at every swing the pallet
+              fork lets the escape wheel turn by one tooth. Each release is a
+              beat, and the beats carry the hands round the dial.
+            </p>
+          </div>
+        </div>
       </div>
     </section>
   );

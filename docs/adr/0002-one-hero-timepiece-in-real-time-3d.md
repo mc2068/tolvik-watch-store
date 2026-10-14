@@ -9,5 +9,5 @@ Only the Hero Timepiece is an interactive 3D object; every other Timepiece is sh
 
 ## Consequences
 
-- The Hero Timepiece persists on screen through the first three acts of Home (arrival, turn, Exploded View); the rest of the page is still, editorial sections.
+- The Hero Timepiece persists on screen through the first three acts of Home (arrival, turn, Exploded View); the rest of the page is still, editorial sections, with one exception: the craftsmanship section shows the escapement at work in real-time 3D. It is not a Timepiece and cannot be turned or recoloured; it is a second free CC-BY model playing its own animation, included because its file fits the phone budget, and it is a Still wherever the 3D is not.
 - Phones get a lighter model and simpler effects, with a still-image fallback on very weak devices.

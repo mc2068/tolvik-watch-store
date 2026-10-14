@@ -19,6 +19,7 @@ import {
 } from "@/components/three/framing";
 import { HeroTimepiece } from "@/components/three/HeroTimepiece";
 import { ARRIVED, poseAt } from "@/components/three/pose";
+import { FirstFrame, LostContext } from "@/components/three/scene-signals";
 import { useExplodedView } from "@/components/three/use-exploded-view";
 import {
   type LookAround,
@@ -232,33 +233,4 @@ function Posed({
       </group>
     </>
   );
-}
-
-/**
- * Tells Home when the browser drops the scene. A phone does this to a page
- * left in the background, and the canvas goes blank; Home then shows the
- * Still again.
- */
-function LostContext({ onLost }: { onLost: () => void }) {
-  const canvas = useThree((three) => three.gl.domElement);
-
-  useEffect(() => {
-    canvas.addEventListener("webglcontextlost", onLost);
-    return () => canvas.removeEventListener("webglcontextlost", onLost);
-  }, [canvas, onLost]);
-
-  return null;
-}
-
-/** Tells Home when the watch has been drawn, so the Still can step aside. */
-function FirstFrame({ onDrawn }: { onDrawn: () => void }) {
-  const told = useRef(false);
-
-  useFrame(() => {
-    if (told.current) return;
-    told.current = true;
-    onDrawn();
-  });
-
-  return null;
 }
