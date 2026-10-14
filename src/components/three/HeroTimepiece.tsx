@@ -7,7 +7,11 @@ import {
   DIAL_WORDMARK_SIZE,
   drawDialWordmark,
 } from "@/components/three/dial-wordmark";
-import { HAND_CAP, HANDS, HERO_MODEL } from "@/components/three/hero-model";
+import {
+  HAND_CAP,
+  HANDS,
+  type HERO_MODEL,
+} from "@/components/three/hero-model";
 import { createMaterials } from "@/components/three/materials";
 import { useClock } from "@/components/three/use-clock";
 import type { Finish } from "@/lib/catalogue";
@@ -17,11 +21,18 @@ import type { Finish } from "@/lib/catalogue";
 const WORDMARK = { width: 0.56, y: 0.33, lift: 0.002 } as const;
 
 /** The Hero Timepiece: the prepared model, each part made in the Finish. */
-export function HeroTimepiece({ finish }: { finish: Finish }) {
+export function HeroTimepiece({
+  model,
+  finish,
+}: {
+  /** Which of the two models: the lighter one on a phone. */
+  model: (typeof HERO_MODEL)[keyof typeof HERO_MODEL];
+  finish: Finish;
+}) {
   // `useGLTF` downloads and decodes the model, and pauses this component
   // (React's Suspense) until it is ready. The Draco decoder is switched off:
   // the model is meshopt-compressed and needs nothing fetched to decode it.
-  const { nodes } = useGLTF(HERO_MODEL.main, false);
+  const { nodes } = useGLTF(model, false);
   const handsPart = useClock();
 
   const materials = useMemo(() => createMaterials(finish), [finish]);

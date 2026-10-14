@@ -441,6 +441,16 @@
   }
 }
 
+/* A small link that stands alone, as a breadcrumb's do: padded out to the
+   height of a thumb, and wide enough for one, with the padding taken back
+   from its margin so the line it stands in does not grow. A link inside a
+   sentence goes without: the words around it are what it is found by. */
+@utility tap-target {
+  display: inline-block;
+  padding: 0.75rem 0.5rem;
+  margin: -0.75rem -0.5rem;
+}
+
 @media (prefers-reduced-motion: reduce) {
   :root {
     --duration-quick: 0ms;

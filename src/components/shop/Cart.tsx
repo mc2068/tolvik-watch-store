@@ -175,7 +175,7 @@ function Line({
             <Link
               href={timepiecePath(timepiece.slug)}
               onClick={onFollow}
-              className="transition-colors duration-(--duration-quick) ease-settle hover:text-steel"
+              className="tap-target transition-colors duration-(--duration-quick) ease-settle hover:text-steel"
             >
               {timepiece.name}
             </Link>
@@ -213,7 +213,7 @@ function Line({
           <button
             type="button"
             onClick={onRemove}
-            className="text-link text-small"
+            className="tap-target text-link text-small"
           >
             Remove<span className="sr-only"> {timepiece.name}</span>
           </button>

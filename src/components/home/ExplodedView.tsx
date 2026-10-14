@@ -119,7 +119,9 @@ function NamesInALine() {
 /**
  * The names beside a live watch. The list is laid over the watch's box and
  * each name follows its part: the scene says where on the screen it belongs
- * and how much of it to show, and the name is moved there.
+ * and how much of it to show, and the name is moved there. On a narrow
+ * phone the longest name would run off the screen, so the column of names
+ * is drawn in, all together, until it ends at the page's gutter.
  */
 function NamesBesideTheParts() {
   const list = useRef<HTMLOListElement>(null);
@@ -133,10 +135,18 @@ function NamesBesideTheParts() {
       // the list's own, so the list is measured each time. The two need not
       // line up: the act's frame is still on its way up to the Stage, or
       // already leaving it, at either end of a brisk scroll.
-      const { left, top } = list.current.getBoundingClientRect();
+      const { left, top, width } = list.current.getBoundingClientRect();
+      const gutter = parseFloat(getComputedStyle(list.current).paddingRight);
+      const room = width - gutter;
+      let overhang = 0;
+      for (const [part, item] of items.current) {
+        const name = item.firstElementChild as HTMLElement;
+        const reach = labels[part].x - left + name.offsetWidth;
+        overhang = Math.max(overhang, reach - room);
+      }
       for (const [part, item] of items.current) {
         const { x, y, shown } = labels[part];
-        item.style.transform = `translate3d(${Math.round(x - left)}px, ${Math.round(y - top)}px, 0)`;
+        item.style.transform = `translate3d(${Math.round(x - left - overhang)}px, ${Math.round(y - top)}px, 0)`;
         item.style.opacity = String(shown);
       }
     };
@@ -145,10 +155,13 @@ function NamesBesideTheParts() {
   }, []);
 
   return (
+    // The gutter is padding, which the names do not stand in but measure
+    // the room by, and the list is clipped at its sides: a name never widens
+    // the page, which a phone would let the Shopper pan across.
     <ol
       ref={list}
       aria-label={PARTS_LABEL}
-      className="watch-box pointer-events-none"
+      className="watch-box pointer-events-none overflow-x-clip px-gutter"
     >
       {PARTS.map((part) => (
         <li
