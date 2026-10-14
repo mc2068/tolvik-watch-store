@@ -118,7 +118,7 @@ Build to these unless Mohamed changes them.
 - **Collection**: slug, name, one-line description. A Timepiece belongs to one Collection.
 - **Colourway**: one of three dial colours on one of two bracelets, six in all. Only the Hero Timepiece has Colourways; each has a slug, a display name, the names of its dial colour and its bracelet, the Hero Timepiece's Finish in it (the material values the 3D model needs) and one Still from the front. The Catalogue names the default: the Hero Timepiece as it is listed, whose Still it shares.
 - **Cart line**: Timepiece slug, Colourway when there is one, quantity. Price and name are looked up from the Catalogue, never copied into the cart.
-- **Order**: exists only on the confirmation page as an invented order number and the cart contents. It is stored nowhere.
+- **Order**: exists only on the confirmation page as an invented order number, the cart contents, and the name and address the Shopper typed. It is stored nowhere.
 
 All specifications and brand history are invented; keep them plausible and modest.
 
