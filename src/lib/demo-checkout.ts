@@ -12,6 +12,16 @@ export type Shipping = {
   country: string;
 };
 
+/** A shipping form as it opens, with nothing typed in it. */
+export const emptyShipping: Shipping = {
+  name: "",
+  email: "",
+  address: "",
+  city: "",
+  postcode: "",
+  country: "",
+};
+
 /** What is wrong with each field of a shipping form that has anything wrong. */
 export type ShippingProblems = Partial<Record<keyof Shipping, string>>;
 
@@ -22,7 +32,7 @@ const anEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const aPostcode = /^[a-z0-9 -]{3,10}$/i;
 
 /** What each field asks for when it is left empty. */
-const asked: Shipping = {
+const askedWhenEmpty: Shipping = {
   name: "Enter your full name.",
   email: "Enter your email address.",
   address: "Enter your street address.",
@@ -39,8 +49,8 @@ const asked: Shipping = {
 export function checkShipping(shipping: Shipping): ShippingProblems {
   const problems: ShippingProblems = {};
 
-  for (const field of Object.keys(asked) as (keyof Shipping)[]) {
-    if (!shipping[field].trim()) problems[field] = asked[field];
+  for (const field of fieldsOf(shipping)) {
+    if (!shipping[field].trim()) problems[field] = askedWhenEmpty[field];
   }
 
   const email = shipping.email.trim();
@@ -55,6 +65,21 @@ export function checkShipping(shipping: Shipping): ShippingProblems {
 
   return problems;
 }
+
+/**
+ * The shipping form as it goes on to the payment step: each field without
+ * the spaces a Shopper may leave either side of what they type.
+ */
+export function settleShipping(shipping: Shipping): Shipping {
+  const settled = { ...shipping };
+  for (const field of fieldsOf(shipping)) {
+    settled[field] = shipping[field].trim();
+  }
+  return settled;
+}
+
+const fieldsOf = (shipping: Shipping) =>
+  Object.keys(shipping) as (keyof Shipping)[];
 
 /**
  * An order number for the confirmation: TLV and six digits. It is invented

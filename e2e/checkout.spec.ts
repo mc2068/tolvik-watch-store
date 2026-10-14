@@ -146,6 +146,18 @@ test("leaving the checkout forgets what was typed there", async ({ page }) => {
   for (const label of Object.keys(shipping)) {
     await expect(field(page, label)).toHaveValue("");
   }
+
+  // Nor does the browser's Back bring it back: Next keeps a page the
+  // Shopper has left, hidden, to show it again as it was.
+  await fillShipping(page);
+  await page.getByRole("banner").getByRole("link").first().click();
+  await expect(page).toHaveURL("/");
+  await page.goBack();
+
+  await expect(page).toHaveURL("/checkout");
+  for (const label of Object.keys(shipping)) {
+    await expect(field(page, label)).toHaveValue("");
+  }
 });
 
 test("a second order starts afresh, not on the last one's confirmation", async ({
@@ -356,14 +368,30 @@ test.describe("at phone width", () => {
     const formTop = (await shippingForm(page).boundingBox())!.y;
     expect(reviewTop).toBeLessThan(formTop);
 
-    await fillShipping(page);
     const fits = () =>
       page.evaluate(() => document.documentElement.scrollWidth);
+
+    // What is wrong is said under the field, in view as the keyboard
+    // comes to it.
+    await continueToPayment(page).click();
+    await expect(field(page, "Full name")).toBeFocused();
+    await expect(
+      shippingForm(page).getByText("Enter your full name."),
+    ).toBeInViewport();
     expect(await fits()).toBeLessThanOrEqual(390);
 
+    await fillShipping(page);
     await continueToPayment(page).click();
     await expect(placeOrder(page)).toBeVisible();
     expect(await fits()).toBeLessThanOrEqual(390);
+
+    // Every control is big enough for a thumb.
+    for (const control of [
+      ...(await review(page).getByRole("button").all()),
+      ...(await payment(page).getByRole("button").all()),
+    ]) {
+      expect((await control.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    }
 
     await placeOrder(page).click();
     await expect(page.getByRole("heading", { level: 1 })).toBeInViewport();

@@ -1,6 +1,10 @@
 import { expect, test } from "vitest";
 
-import { checkShipping, inventOrderNumber } from "@/lib/demo-checkout";
+import {
+  checkShipping,
+  inventOrderNumber,
+  settleShipping,
+} from "@/lib/demo-checkout";
 
 const shipping = {
   name: "Ada Lindqvist",
@@ -64,4 +68,17 @@ test("an order number is TLV and six digits, never starting at nought", () => {
   expect(inventOrderNumber(() => 0)).toBe("TLV-100000");
   expect(inventOrderNumber(() => 0.5)).toBe("TLV-550000");
   expect(inventOrderNumber(() => 0.9999999)).toBe("TLV-999999");
+});
+
+test("what goes on from the form has the spaces either side of each field taken off", () => {
+  const typed = {
+    name: "  Ada Lindqvist ",
+    email: "ada@example.com ",
+    address: " Strandvägen 7",
+    city: "Stockholm",
+    postcode: "114 56  ",
+    country: "\tSweden",
+  };
+
+  expect(settleShipping(typed)).toEqual(shipping);
 });

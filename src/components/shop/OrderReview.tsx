@@ -30,7 +30,7 @@ export function OrderReview({
           <button
             type="button"
             onClick={onChange}
-            className="text-link text-small"
+            className="text-link -my-3 py-3 text-small"
           >
             Change<span className="sr-only"> what is in the cart</span>
           </button>
@@ -72,9 +72,6 @@ export function OrderReview({
           Total
         </span>
         <span className="font-display text-title">{formatPrice(total)}</span>
-      </p>
-      <p className="mt-1 text-small text-platinum-dim">
-        Insured shipping is included.
       </p>
     </section>
   );

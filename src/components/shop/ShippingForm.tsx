@@ -9,7 +9,11 @@ import {
   useState,
 } from "react";
 
-import { checkShipping, type Shipping } from "@/lib/demo-checkout";
+import {
+  checkShipping,
+  settleShipping,
+  type Shipping,
+} from "@/lib/demo-checkout";
 
 type Field = {
   name: keyof Shipping;
@@ -74,7 +78,7 @@ export function ShippingForm({
   // `preventDefault` stops the browser sending the form anywhere: nothing
   // here has anywhere to go. The inputs have no `name` either, so even a
   // form sent by the browser would carry none of them.
-  const goOn = (event: FormEvent) => {
+  const continueToPayment = (event: FormEvent) => {
     event.preventDefault();
     setTried(true);
 
@@ -85,17 +89,17 @@ export function ShippingForm({
       return;
     }
 
-    onDone(
-      Object.fromEntries(
-        Object.entries(shipping).map(([field, value]) => [field, value.trim()]),
-      ) as Shipping,
-    );
+    onDone(settleShipping(shipping));
   };
 
   return (
     // `noValidate` turns off the browser's own bubbles, which would say the
     // same things in another voice; the messages under the fields say them.
-    <form noValidate aria-labelledby={`${id}-heading`} onSubmit={goOn}>
+    <form
+      noValidate
+      aria-labelledby={`${id}-heading`}
+      onSubmit={continueToPayment}
+    >
       <h2
         ref={headingRef}
         id={`${id}-heading`}
@@ -126,9 +130,14 @@ export function ShippingForm({
                 {label}
               </label>
               <input
+                // Each input is kept by its field, to bring the keyboard to
+                // it; the function it returns lets it go again.
                 ref={(input) => {
-                  if (input) inputs.current.set(name, input);
-                  else inputs.current.delete(name);
+                  if (!input) return;
+                  inputs.current.set(name, input);
+                  return () => {
+                    inputs.current.delete(name);
+                  };
                 }}
                 id={fieldId}
                 type={type}

@@ -6,7 +6,11 @@ import { type Ref, useEffect, useId, useRef, useState } from "react";
 import { OrderReview } from "@/components/shop/OrderReview";
 import { ShippingForm } from "@/components/shop/ShippingForm";
 import { ActionLink } from "@/components/ui/ActionLink";
-import { inventOrderNumber, type Shipping } from "@/lib/demo-checkout";
+import {
+  emptyShipping,
+  inventOrderNumber,
+  type Shipping,
+} from "@/lib/demo-checkout";
 import { useCart, useCartRestored } from "@/store/cart";
 import {
   type CartCatalogue,
@@ -14,22 +18,23 @@ import {
   priceCart,
 } from "@/store/cart-lines";
 
-type Step = "shipping" | "payment";
+/** The Demo Checkout's three steps, in order, named as the Shopper reads them. */
+const steps = {
+  shipping: "Shipping",
+  payment: "Payment",
+  confirmation: "Confirmation",
+} as const;
+
+type Step = keyof typeof steps;
+
+/** The steps before the order is placed, which the Shopper moves between. */
+type StepBeforeOrder = Exclude<Step, "confirmation">;
 
 /** An order as the confirmation shows it. It is kept nowhere else. */
 type Order = {
   number: string;
   shipping: Shipping;
   cart: PricedCart;
-};
-
-const noShipping: Shipping = {
-  name: "",
-  email: "",
-  address: "",
-  city: "",
-  postcode: "",
-  country: "",
 };
 
 /**
@@ -65,8 +70,8 @@ function Checkout(catalogue: CartCatalogue) {
   const openCart = useCart((cart) => cart.open);
   const clearCart = useCart((cart) => cart.clear);
 
-  const [step, setStep] = useState<Step>("shipping");
-  const [shipping, setShipping] = useState<Shipping>(noShipping);
+  const [step, setStep] = useState<StepBeforeOrder>("shipping");
+  const [shipping, setShipping] = useState<Shipping>(emptyShipping);
   const [order, setOrder] = useState<Order>();
 
   const priced = priceCart(lines, catalogue);
@@ -89,7 +94,7 @@ function Checkout(catalogue: CartCatalogue) {
     if (moved.current) heading.current?.focus();
   }, [step, order]);
 
-  const goTo = (next: Step) => {
+  const goTo = (next: StepBeforeOrder) => {
     moved.current = true;
     setStep(next);
   };
@@ -107,7 +112,7 @@ function Checkout(catalogue: CartCatalogue) {
 
   return (
     <>
-      <Opening title="Checkout" step={step} />
+      <CheckoutHeader title="Checkout" step={step} />
 
       {/* Until the cart is back from the browser's storage, or while an
           empty one is being sent away, there is nothing to show yet. */}
@@ -147,19 +152,17 @@ function Checkout(catalogue: CartCatalogue) {
   );
 }
 
-const steps = ["Shipping", "Payment", "Confirmation"] as const;
-
 /**
  * The top of the page at each step: its heading, and the three steps of
  * the Demo Checkout in words, with the one the Shopper is on marked.
  */
-function Opening({
+function CheckoutHeader({
   title,
   step,
   headingRef,
 }: {
   title: string;
-  step: Step | "confirmation";
+  step: Step;
   headingRef?: Ref<HTMLHeadingElement>;
 }) {
   return (
@@ -175,11 +178,11 @@ function Opening({
         aria-label="Steps"
         className="mt-8 flex flex-wrap gap-x-8 gap-y-2 text-small tracking-open md:mt-10"
       >
-        {steps.map((name) => {
-          const current = name.toLowerCase() === step;
+        {Object.entries(steps).map(([each, name]) => {
+          const current = each === step;
           return (
             <li
-              key={name}
+              key={each}
               aria-current={current ? "step" : undefined}
               className={
                 current
@@ -241,7 +244,7 @@ function Payment({
           <button
             type="button"
             onClick={onChangeShipping}
-            className="text-link text-small"
+            className="text-link -my-3 py-3 text-small"
           >
             Change<span className="sr-only"> the shipping address</span>
           </button>
@@ -300,7 +303,7 @@ function Confirmation({
 
   return (
     <>
-      <Opening
+      <CheckoutHeader
         title={`Thank you, ${firstName}.`}
         step="confirmation"
         headingRef={headingRef}
