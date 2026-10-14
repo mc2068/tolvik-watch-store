@@ -43,6 +43,51 @@ test("the navigation sits on one line on desktop, no more than 80px tall", async
   expect(await top("Collection")).toBe(await top("Craftsmanship"));
 });
 
+// The second is the Hero Timepiece's page below a laptop's width, where what
+// the browser brings into view must also clear the watch's frame.
+for (const { where, path, viewport } of [
+  { where: "on the Collection", path: "/collection", viewport: undefined },
+  {
+    where: "on the Hero Timepiece's page at tablet width",
+    path: "/collection/tjern",
+    viewport: { width: 768, height: 1024 },
+  },
+]) {
+  test.describe(where, () => {
+    if (viewport) test.use({ viewport });
+
+    test("the keyboard can come up into the navigation without moving the page", async ({
+      page,
+    }) => {
+      await page.goto(path);
+
+      // Partway down, with the first control in the page focused but left
+      // where it is, as the Shopper would have Tabbed to it on the way down.
+      await page.evaluate(() => {
+        window.scrollTo(0, 400);
+        document
+          .querySelector<HTMLElement>("main :is(a[href], button, input)")
+          ?.focus({ preventScroll: true });
+      });
+      const scrollY = () => page.evaluate(() => window.scrollY);
+      const inBanner = () =>
+        page.evaluate(
+          () => !!document.activeElement?.closest("body > header"),
+        );
+      expect(await scrollY()).toBe(400);
+
+      // Up through every control in the header, then back down through
+      // them. The header is held at the top, so none of them needs the page
+      // to move.
+      for (const key of ["Shift+Tab", "Shift+Tab", "Shift+Tab", "Tab", "Tab"]) {
+        await page.keyboard.press(key);
+        expect(await inBanner()).toBe(true);
+        expect(await scrollY()).toBe(400);
+      }
+    });
+  });
+}
+
 test.describe("at phone width", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 

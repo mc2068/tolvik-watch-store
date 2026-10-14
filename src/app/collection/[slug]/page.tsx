@@ -36,6 +36,13 @@ export async function generateStaticParams() {
 // answer: an address with no Timepiece is then a true 404.
 export const ensureStatic = "navigation";
 
+// Under `npm run dev`, Next checks every page for anything that keeps a
+// click on a link from showing something at once, and reading `params`
+// outside a `<Suspense>` is one. Here that wait is the point, as said
+// above, so the page tells Next it is allowed to block. This only quiets
+// that check: the page is still held to `ensureStatic`.
+export const instant = false;
+
 // `generateMetadata` is how a page whose title depends on its address sets
 // it. The root layout adds the site's name after the title.
 export async function generateMetadata({
