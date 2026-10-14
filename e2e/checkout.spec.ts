@@ -276,6 +276,12 @@ test("nothing the Shopper types leaves the page, or stays in the browser", async
   });
 
   await checkOutWith(page, "/collection/midnatt");
+  // The browser is asked neither to fill the form from what it knows nor
+  // to keep what is typed in it for next time.
+  await expect(shippingForm(page)).toHaveAttribute("autocomplete", "off");
+  for (const label of Object.keys(shipping)) {
+    await expect(field(page, label)).toHaveAttribute("autocomplete", "off");
+  }
   await fillShipping(page);
   await continueToPayment(page).click();
   await placeOrder(page).click();

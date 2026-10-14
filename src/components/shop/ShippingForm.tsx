@@ -18,34 +18,18 @@ import {
 type Field = {
   name: keyof Shipping;
   label: string;
-  /** What the browser may fill it with, from what it knows of the Shopper. */
-  autoComplete: string;
   type?: HTMLInputTypeAttribute;
   /** Whether it shares a row with its neighbour, where there is room. */
   half?: boolean;
 };
 
 const fields: Field[] = [
-  { name: "name", label: "Full name", autoComplete: "name" },
-  { name: "email", label: "Email", autoComplete: "email", type: "email" },
-  {
-    name: "address",
-    label: "Street address",
-    autoComplete: "address-line1",
-  },
-  {
-    name: "city",
-    label: "Town or city",
-    autoComplete: "address-level2",
-    half: true,
-  },
-  {
-    name: "postcode",
-    label: "Postal code",
-    autoComplete: "postal-code",
-    half: true,
-  },
-  { name: "country", label: "Country", autoComplete: "country-name" },
+  { name: "name", label: "Full name" },
+  { name: "email", label: "Email", type: "email" },
+  { name: "address", label: "Street address" },
+  { name: "city", label: "Town or city", half: true },
+  { name: "postcode", label: "Postal code", half: true },
+  { name: "country", label: "Country" },
 ];
 
 /**
@@ -95,8 +79,13 @@ export function ShippingForm({
   return (
     // `noValidate` turns off the browser's own bubbles, which would say the
     // same things in another voice; the messages under the fields say them.
+    // `autoComplete="off"`, on the form and on each field, asks the browser
+    // not to fill them from what it knows of the Shopper, nor to offer to
+    // keep what is typed for next time: the address is never stored, not
+    // even by the browser. It is a request, which browsers mostly honour.
     <form
       noValidate
+      autoComplete="off"
       aria-labelledby={`${id}-heading`}
       onSubmit={continueToPayment}
     >
@@ -114,7 +103,7 @@ export function ShippingForm({
       </p>
 
       <div className="mt-10 grid gap-x-5 gap-y-7 md:grid-cols-2">
-        {fields.map(({ name, label, autoComplete, type = "text", half }) => {
+        {fields.map(({ name, label, type = "text", half }) => {
           const problem = problems[name];
           const fieldId = `${id}-${name}`;
 
@@ -141,7 +130,7 @@ export function ShippingForm({
                 }}
                 id={fieldId}
                 type={type}
-                autoComplete={autoComplete}
+                autoComplete="off"
                 spellCheck={false}
                 value={shipping[name]}
                 onChange={({ target: { value } }) =>
