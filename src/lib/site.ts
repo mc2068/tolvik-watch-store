@@ -13,6 +13,13 @@ export const site = {
   },
 } as const;
 
+/**
+ * The Share card's size in pixels: the size Open Graph asks for. `npm run
+ * stills` photographs the card from the studio's share room into
+ * `src/app/opengraph-image.jpg`, which Next offers for every page.
+ */
+export const SHARE_CARD = { width: 1200, height: 630 } as const;
+
 /** The address of a Collection: its place on the Collection page. */
 export function collectionPath(slug: string): string {
   return `/collection#${slug}`;

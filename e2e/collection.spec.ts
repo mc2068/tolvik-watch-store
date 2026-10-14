@@ -133,12 +133,13 @@ test("Home shows a selection of the Collection and the way to all of it", async 
   ).toHaveAttribute("href", "/collection");
 });
 
-// Its three rooms: one for each Timepiece, one for each Colourway, and the
-// escapement's.
+// Its four rooms: one for each Timepiece, one for each Colourway, the
+// escapement's and the Share card's.
 for (const address of [
   "/studio/tjern",
   "/studio/colourway/rowan-red-blackened-steel",
   "/studio/escapement",
+  "/studio/share",
 ]) {
   test(`the studio at ${address} is closed in the site a Shopper gets`, async ({
     page,

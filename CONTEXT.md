@@ -74,6 +74,10 @@ _Avoid_: Timer, ticker
 The part of a mechanical watch that lets its spring's energy out one beat at a time, shown at work in real-time 3D in Home's craftsmanship section. It is a model of its own, not something inside the Hero Timepiece, which has no movement.
 _Avoid_: Movement, mechanism, engine
 
+**Share card**:
+The one image a link to any page of the site shows where it is shared: the Hero Timepiece beside Home's headline. Each page pairs it with its own title and description.
+_Avoid_: OG image, social image, thumbnail
+
 **Demo Checkout**:
 A checkout that collects no payment and ends in a simulated order confirmation.
 _Avoid_: Fake checkout, mock payment, test checkout

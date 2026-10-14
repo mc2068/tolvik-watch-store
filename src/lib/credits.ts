@@ -10,6 +10,8 @@ export type ModelCredit = {
   authorUrl: string;
   licence: string;
   licenceUrl: string;
+  /** What was done to the model for this site, which the licence asks be said. */
+  changes: string;
 };
 
 export const heroModelCredit: ModelCredit = {
@@ -20,6 +22,8 @@ export const heroModelCredit: ModelCredit = {
   authorUrl: "https://sketchfab.com/render-lab",
   licence: "CC-BY-4.0",
   licenceUrl: "http://creativecommons.org/licenses/by/4.0/",
+  changes:
+    "Simplified and compressed for the web, its three hands separated so they can tell the time, and given new materials and dial colours.",
 };
 
 export const escapementModelCredit: ModelCredit = {
@@ -30,6 +34,7 @@ export const escapementModelCredit: ModelCredit = {
   authorUrl: "https://sketchfab.com/cyamahat",
   licence: "CC-BY-4.0",
   licenceUrl: "http://creativecommons.org/licenses/by/4.0/",
+  changes: "Simplified and compressed for the web, and given new materials.",
 };
 
 /** Every model the site ships, in the order the credits page lists them. */

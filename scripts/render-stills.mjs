@@ -16,6 +16,9 @@
 //                                               Colourway
 //   public/stills/escapement.webp               the escapement, held at one
 //                                               moment of its animation
+//   src/app/opengraph-image.jpg                 the Share card: the image a
+//                                               link to the site shows
+//                                               where it is shared
 //
 // The Catalogue says where each Still goes. The Hero Timepiece's are filed
 // under `hero-timepiece`, and Home shows the one from the front where there
@@ -26,7 +29,8 @@
 // Each Still is a photograph of the real thing. The script builds the site
 // with its studio open: a page that plays Home's 3D acts with any Timepiece,
 // in its own Finish, another that plays them with the Hero Timepiece in
-// any Colourway, and a third that holds the escapement still. It serves
+// any Colourway, a third that holds the escapement still, and a fourth that
+// lays out the Share card around the Hero Timepiece's Still. It serves
 // that build, opens each studio in turn in a headless browser, waits for
 // the scene, scrolls to where the acts hold the watch as each view wants it
 // and captures the square the camera composes the watch in. Rendered from the scene itself, the opening Still
@@ -51,6 +55,7 @@ import { chromium } from "@playwright/test";
 import { ESCAPEMENT_STILL } from "../src/components/three/escapement-model.ts";
 import { HERO_OPENING_STILL } from "../src/components/three/hero-model.ts";
 import { listColourways, listTimepieces } from "../src/lib/catalogue.ts";
+import { SHARE_CARD } from "../src/lib/site.ts";
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const nextCli = "node_modules/next/dist/bin/next";
@@ -185,11 +190,15 @@ async function captureAtRest(page, clip) {
 }
 
 function write(still, bytes) {
-  const file = path.join(repo, "public", still);
-  mkdirSync(path.dirname(file), { recursive: true });
-  writeFileSync(file, bytes);
+  writeInRepo(`public${still}`, bytes);
+}
+
+function writeInRepo(file, bytes) {
+  const target = path.join(repo, file);
+  mkdirSync(path.dirname(target), { recursive: true });
+  writeFileSync(target, bytes);
   const kb = Math.round(bytes.byteLength / 1024);
-  console.log(`Wrote public${still} (${kb} KB)`);
+  console.log(`Wrote ${file} (${kb} KB)`);
 }
 
 /**
@@ -313,6 +322,26 @@ async function photographEscapement(browser, site) {
   await page.close();
 }
 
+/**
+ * Photographs the Share card in its studio room, in a window exactly its
+ * size, and writes it where Next offers it for every page. It is a JPEG,
+ * which every site that shows a link's preview can read.
+ */
+async function photographShareCard(browser, site) {
+  const page = await browser.newPage({ viewport: SHARE_CARD });
+  await page.goto(`${site.url}/studio/share`);
+  // The card alone, with no header or footer around it.
+  await page.addStyleTag({
+    content: "body > :not(main) { display: none !important; }",
+  });
+  await page.evaluate(() => document.fonts.ready);
+  const card = page.locator("[data-share-card]");
+  await card.locator("img").evaluate((image) => image.decode());
+  const jpeg = await card.screenshot({ type: "jpeg", quality: 90 });
+  writeInRepo("src/app/opengraph-image.jpg", jpeg);
+  await page.close();
+}
+
 async function main() {
   buildSite({ studio: true });
   const site = await serveBuiltSite();
@@ -342,6 +371,7 @@ async function main() {
       });
     }
     await photographEscapement(browser, site);
+    await photographShareCard(browser, site);
   } finally {
     await browser.close();
     site.stop();
