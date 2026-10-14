@@ -47,7 +47,8 @@ function findLayers(watch: Object3D): Record<Part, Layer> {
  * Opens the Hero Timepiece into its Exploded View. It returns the function
  * the frame loop calls, once the watch has been posed for the frame, with
  * where the Pose has each part: it moves each part along the watch's axis
- * and tells Home where on the screen each part's name belongs.
+ * and, once the scene is shown, tells Home where on the screen each part's
+ * name belongs. Until then Home keeps the names in their line.
  */
 export function useExplodedView(
   watch: RefObject<Object3D | null>,
@@ -55,13 +56,14 @@ export function useExplodedView(
   parts: Record<Part, PartPose>,
   camera: Camera,
   canvas: HTMLCanvasElement,
+  shown: boolean,
 ) => void {
   const layers = useRef<Record<Part, Layer>>(null);
   const wasClosed = useRef(true);
 
   useEffect(() => () => partLabels.clear(), []);
 
-  return (parts, camera, canvas) => {
+  return (parts, camera, canvas, shown) => {
     if (!watch.current) return;
 
     // A closed watch that was closed on the last frame too has nothing to
@@ -75,6 +77,7 @@ export function useExplodedView(
     const { current: found } = layers;
 
     for (const name of PARTS) found[name].part.position.z = parts[name].offset;
+    if (!shown) return;
 
     watch.current.updateWorldMatrix(true, true);
     camera.updateMatrixWorld();

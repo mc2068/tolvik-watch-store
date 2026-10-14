@@ -19,10 +19,11 @@ const EscapementScene = dynamic(
 /**
  * The escapement at work, filling the box it is put in. It is its Still
  * until the page has scrolled to within a screen of it; then the 3D scene
- * loads behind the Still, and takes its place once it has drawn. The
- * escapement plays only while it is on screen. A Shopper who prefers reduced
- * motion, a browser that cannot draw 3D and a scene that fails or is
- * dropped all keep the Still.
+ * loads behind the Still, and takes its place once it has drawn and the
+ * device has shown it can keep up. The escapement plays only while it is on
+ * screen. A Shopper who prefers reduced motion, a browser that cannot draw
+ * 3D, a device that cannot hold a steady frame rate and a scene that fails
+ * or is dropped all keep the Still.
  */
 export function EscapementCloseUp({
   heldAt,
@@ -98,7 +99,7 @@ export function EscapementCloseUp({
               running={onScreen}
               heldAt={heldAt}
               onReady={() => setDrawn(true)}
-              onLost={() => setFailed(true)}
+              onDropped={() => setFailed(true)}
             />
           </div>
         </SceneBoundary>

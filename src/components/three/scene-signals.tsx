@@ -1,9 +1,15 @@
 import { useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+
+import { isAutomated } from "@/components/three/device";
+import {
+  type FrameRateVerdict,
+  judgeFrameRate,
+} from "@/components/three/frame-rate";
 
 // What a scene tells the section around it, which shows a Still in its
-// place until the scene has drawn and again if it is lost. Both go inside
-// a scene's <Canvas>.
+// place until the scene may be shown, and again if it is dropped. Both go
+// inside a scene's <Canvas>.
 
 /**
  * Tells the section when the browser drops the scene. A phone does this to
@@ -22,17 +28,32 @@ export function LostContext({ onLost }: { onLost: () => void }) {
 }
 
 /**
- * Tells the section when the scene has been drawn for the first time, so
- * the Still can step aside. Put it beside the model, inside the Suspense
- * that waits for it.
+ * Tells the section when the scene may be shown, and when the device cannot
+ * keep up with it. Until its frame rate has been judged the scene draws
+ * every frame, unseen behind its Still; found steady it is shown, and still
+ * watched for as long as it lives, so a device that slows later drops it
+ * then. Put it beside the model, inside the Suspense that waits for it, so
+ * the frames judged are the model's.
  */
-export function FirstFrame({ onDrawn }: { onDrawn: () => void }) {
-  const told = useRef(false);
+export function SteadyFrames({
+  onSteady,
+  onUnsteady,
+}: {
+  onSteady: () => void;
+  onUnsteady: () => void;
+}) {
+  // An automated browser is not judged: it is shown as soon as it has drawn.
+  const [judge] = useState(() => (isAutomated() ? null : judgeFrameRate()));
+  const told = useRef<FrameRateVerdict>("judging");
 
-  useFrame(() => {
-    if (told.current) return;
-    told.current = true;
-    onDrawn();
+  useFrame(({ invalidate }, delta) => {
+    const verdict = judge ? judge.record(delta * 1000) : "steady";
+    if (verdict === "judging") invalidate();
+    if (verdict === told.current) return;
+
+    told.current = verdict;
+    if (verdict === "steady") onSteady();
+    else onUnsteady();
   });
 
   return null;

@@ -24,9 +24,10 @@ const HeroScene = dynamic(() => import("@/components/three/HeroScene"), {
 /**
  * A Timepiece in real-time 3D, filling the box it is put in: Home's Stage,
  * or the Hero Timepiece's frame on its own page. It opens as a Still, loads
- * the 3D scene behind it, and swaps the two once the watch has been drawn. A
- * Shopper who prefers reduced motion, a browser that cannot draw 3D and a
- * scene that fails or is dropped all keep a Still.
+ * the 3D scene behind it, and swaps the two once the watch has been drawn
+ * and the device has shown it can keep up. A Shopper who prefers reduced
+ * motion, a browser that cannot draw 3D, a device that cannot hold a steady
+ * frame rate and a scene that fails or is dropped all keep a Still.
  */
 export function LiveTimepiece({
   finish,
@@ -94,7 +95,7 @@ export function LiveTimepiece({
                 finish={finish}
                 arrived={arrived}
                 onReady={() => setDrawn(true)}
-                onLost={() => setFailed(true)}
+                onDropped={() => setFailed(true)}
               />
             </div>
           </SceneBoundary>

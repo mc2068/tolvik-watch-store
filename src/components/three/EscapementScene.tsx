@@ -15,6 +15,7 @@ import {
   type Object3D,
 } from "three";
 
+import { pixelRatioCap } from "@/components/three/device";
 import { createEscapementMaterials } from "@/components/three/escapement-materials";
 import {
   ESCAPEMENT_ANIMATION,
@@ -23,7 +24,7 @@ import {
   ESCAPEMENT_VIEW,
   type EscapementPiece,
 } from "@/components/three/escapement-model";
-import { FirstFrame, LostContext } from "@/components/three/scene-signals";
+import { LostContext, SteadyFrames } from "@/components/three/scene-signals";
 import { token } from "@/lib/tokens";
 
 // The camera: a long lens, as for the Hero Timepiece, looking down on the
@@ -48,7 +49,7 @@ export default function EscapementScene({
   running,
   heldAt,
   onReady,
-  onLost,
+  onDropped,
 }: {
   /** Whether the escapement plays. Off screen it holds still, unseen. */
   running: boolean;
@@ -57,12 +58,16 @@ export default function EscapementScene({
    * photograph. Left out, it plays.
    */
   heldAt?: number;
-  /** The escapement has been drawn for the first time. */
+  /** The escapement has been drawn, and the device keeps up with it. */
   onReady: () => void;
-  /** The browser has taken the scene's graphics memory back. */
-  onLost: () => void;
+  /**
+   * The scene is to give way to the Still: the device cannot keep up with
+   * it, or the browser has taken its graphics memory back.
+   */
+  onDropped: () => void;
 }) {
   const playing = running && heldAt === undefined;
+  const [pixelRatio] = useState(pixelRatioCap);
 
   return (
     // On demand, the scene draws its first frame and then only what it is
@@ -70,15 +75,15 @@ export default function EscapementScene({
     // until it is on screen, and nothing once it has scrolled away.
     <Canvas
       frameloop={playing ? "always" : "demand"}
-      dpr={[1, 2]}
+      dpr={[1, pixelRatio]}
       gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
     >
       <Camera />
       <Studio />
-      <LostContext onLost={onLost} />
+      <LostContext onLost={onDropped} />
       <Suspense fallback={null}>
         <Escapement playing={playing} heldAt={heldAt} />
-        <FirstFrame onDrawn={onReady} />
+        <SteadyFrames onSteady={onReady} onUnsteady={onDropped} />
       </Suspense>
     </Canvas>
   );

@@ -12,14 +12,16 @@ import {
 } from "react";
 import { type DirectionalLight, type Group, MathUtils } from "three";
 
+import { isHandheld, pixelRatioCap } from "@/components/three/device";
 import {
   CAMERA_DISTANCE,
   containFov,
   LENS,
 } from "@/components/three/framing";
+import { HERO_MODEL } from "@/components/three/hero-model";
 import { HeroTimepiece } from "@/components/three/HeroTimepiece";
 import { ARRIVED, poseAt } from "@/components/three/pose";
-import { FirstFrame, LostContext } from "@/components/three/scene-signals";
+import { LostContext, SteadyFrames } from "@/components/three/scene-signals";
 import { useExplodedView } from "@/components/three/use-exploded-view";
 import {
   type LookAround,
@@ -50,43 +52,59 @@ export default function HeroScene({
   finish,
   arrived,
   onReady,
-  onLost,
+  onDropped,
 }: {
   /** The Finish the watch is made in. */
   finish: Finish;
   /** Whether the watch is held arrived, and does not follow the acts. */
   arrived: boolean;
-  /** The watch has been drawn for the first time. */
+  /** The watch has been drawn, and the device keeps up with it. */
   onReady: () => void;
-  /** The browser has taken the scene's graphics memory back. */
-  onLost: () => void;
+  /**
+   * The scene is to give way to the Still: the device cannot keep up with
+   * it, or the browser has taken its graphics memory back.
+   */
+  onDropped: () => void;
 }) {
   const lookAround = useLookAround();
+  const [model] = useState(() =>
+    isHandheld() ? HERO_MODEL.phone : HERO_MODEL.main,
+  );
+  const [pixelRatio] = useState(pixelRatioCap);
+  // Whether the watch is in sight, and no longer drawn behind the Still
+  // while the device is judged.
+  const [shown, setShown] = useState(false);
 
   return (
     // `frameloop="demand"` draws a frame only when something has changed,
     // so a watch at rest costs a phone one frame a second, for the tick, and
-    // nothing once it is off screen. The pixel ratio is capped at 2:
-    // beyond that a phone draws far more pixels than the eye can tell apart.
+    // nothing once it is off screen. The pixel ratio is capped, lower on a
+    // phone, and nothing is drawn over the finished frame.
     //
     // `touch-pan-y` leaves a finger moving up or down the page to scroll it:
     // the browser keeps upright swipes for itself and hands over only the
     // sideways drags that turn the watch.
     <Canvas
       frameloop="demand"
-      dpr={[1, 2]}
+      dpr={[1, pixelRatio]}
       gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
       className="cursor-grab touch-pan-y active:cursor-grabbing"
       {...lookAround.handlers}
     >
       <Camera />
       <Studio />
-      <LostContext onLost={onLost} />
+      <LostContext onLost={onDropped} />
       <Suspense fallback={null}>
-        <Posed arrived={arrived} lookAround={lookAround.asked}>
-          <HeroTimepiece finish={finish} />
+        <Posed arrived={arrived} shown={shown} lookAround={lookAround.asked}>
+          <HeroTimepiece model={model} finish={finish} />
         </Posed>
-        <FirstFrame onDrawn={onReady} />
+        <SteadyFrames
+          onSteady={() => {
+            setShown(true);
+            onReady();
+          }}
+          onUnsteady={onDropped}
+        />
       </Suspense>
     </Canvas>
   );
@@ -167,10 +185,12 @@ function Studio() {
  */
 function Posed({
   arrived,
+  shown,
   lookAround,
   children,
 }: {
   arrived: boolean;
+  shown: boolean;
   lookAround: RefObject<LookAround>;
   children: ReactNode;
 }) {
@@ -184,8 +204,10 @@ function Posed({
   const look = useRef<LookAround>({ yaw: 0, pitch: 0 });
   const explode = useExplodedView(watch);
 
-  // Draw a frame whenever scroll moves an act.
+  // Draw a frame whenever scroll moves an act, and once the watch is shown,
+  // to place the parts' names.
   useEffect(() => actProgress.onChange(() => invalidate()), []);
+  useEffect(() => invalidate(), [shown]);
 
   useFrame(({ scene, camera, size, gl }, delta) => {
     if (!stand.current || !watch.current || !keyLight.current) return;
@@ -220,7 +242,7 @@ function Posed({
     scene.environmentRotation.y = pose.studioTurn;
     keyLight.current.intensity = KEY_LIGHT * pose.light;
 
-    explode(pose.parts, camera, gl.domElement);
+    explode(pose.parts, camera, gl.domElement, shown);
   });
 
   return (

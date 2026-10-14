@@ -83,7 +83,7 @@ export default async function TimepiecePage({
       <nav aria-label="Breadcrumb" className="pt-8 pb-6 md:pt-10 md:pb-8">
         <ol className="flex gap-x-3 text-small tracking-open text-platinum-dim">
           <li>
-            <Link href="/collection" className="text-link">
+            <Link href="/collection" className="tap-target text-link">
               The Collection
             </Link>
           </li>
@@ -92,7 +92,7 @@ export default async function TimepiecePage({
               <span aria-hidden="true">/</span>
               <Link
                 href={collectionPath(collection.slug)}
-                className="text-link"
+                className="tap-target text-link"
               >
                 {collection.name}
               </Link>
