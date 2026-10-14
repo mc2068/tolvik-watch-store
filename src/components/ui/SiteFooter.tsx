@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { Wordmark } from "@/components/ui/Wordmark";
 import { site } from "@/lib/site";
 
@@ -21,7 +23,12 @@ export function SiteFooter() {
               {credit.name}
             </a>
           </p>
-          <p>All rights reserved.</p>
+          <p>
+            All rights reserved.{" "}
+            <Link href="/credits" className="text-link">
+              Credits
+            </Link>
+          </p>
         </div>
       </div>
     </footer>
