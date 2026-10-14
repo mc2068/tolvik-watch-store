@@ -77,8 +77,9 @@ export default function HeroScene({
 
   return (
     // `frameloop="demand"` draws a frame only when something has changed,
-    // so a watch at rest costs a phone one frame a second, for the tick, and
-    // nothing once it is off screen. The pixel ratio is capped, lower on a
+    // so once it is shown a watch at rest costs a phone one frame a second,
+    // for the tick, and nothing once it is off screen. (Before that, while
+    // the device is judged, it draws every frame for a second or so.) The pixel ratio is capped, lower on a
     // phone, and nothing is drawn over the finished frame.
     //
     // `touch-pan-y` leaves a finger moving up or down the page to scroll it:

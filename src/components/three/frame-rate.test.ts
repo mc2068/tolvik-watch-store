@@ -2,7 +2,7 @@ import { describe, expect, test } from "vitest";
 
 import { FRAME_RATE, judgeFrameRate } from "@/components/three/frame-rate";
 
-const { warmUp, sample, slowest, pause } = FRAME_RATE;
+const { warmUp, sample, slowest } = FRAME_RATE;
 
 /** Records each gap in turn and returns the verdict after the last. */
 function recordAll(judge: ReturnType<typeof judgeFrameRate>, gaps: number[]) {
@@ -61,13 +61,13 @@ describe("judging a scene's frame rate", () => {
     expect(judge.record(500)).toBe("unsteady");
   });
 
-  test("counts a long gap against the scene while it is first judged", () => {
+  test("counts a long gap against the scene", () => {
     // Every frame is asked for while the scene is judged, so a long gap is
     // the device being slow, not the scene resting.
     const judge = judgeFrameRate();
     recordAll(judge, frames(warmUp, 16.7));
 
-    expect(recordAll(judge, frames(sample, pause * 2))).toBe("unsteady");
+    expect(recordAll(judge, frames(sample, 500))).toBe("unsteady");
   });
 
   test("draws the line at the slowest steady frame", () => {
@@ -83,45 +83,17 @@ describe("judging a scene's frame rate", () => {
   });
 });
 
-describe("watching a scene found steady", () => {
-  function steadyJudge() {
+describe("a verdict once given", () => {
+  // A scene found steady is shown and draws only when asked, so the gaps
+  // between its frames from then on are its rests, not the device's speed.
+  test("stands for a scene found steady, however slowly it draws later", () => {
     const judge = judgeFrameRate();
     recordAll(judge, frames(warmUp + sample, 16.7));
-    return judge;
-  }
 
-  test("keeps it steady while it goes on drawing quickly", () => {
-    const judge = steadyJudge();
-
-    expect(recordAll(judge, frames(sample * 3, 16.7))).toBe("steady");
+    expect(recordAll(judge, frames(sample * 2, 120))).toBe("steady");
   });
 
-  test("passes over the pauses of a scene that draws only when asked", () => {
-    const judge = steadyJudge();
-
-    // A watch at rest draws once a second, for the tick.
-    expect(recordAll(judge, frames(sample * 3, 1000))).toBe("steady");
-    expect(recordAll(judge, frames(sample * 3, pause + 1))).toBe("steady");
-  });
-
-  test("finds it unsteady once its recent frames have mostly come too slowly", () => {
-    const judge = steadyJudge();
-
-    // The device has slowed: a phone grown hot, or saving its battery.
-    expect(recordAll(judge, frames(sample / 2, 80))).toBe("steady");
-    expect(judge.record(80)).toBe("unsteady");
-  });
-
-  test("judges only its most recent frames", () => {
-    const judge = steadyJudge();
-
-    // Slow frames long past do not add up with a few new ones.
-    recordAll(judge, frames(sample / 2, 80));
-    recordAll(judge, frames(sample, 16.7));
-    expect(recordAll(judge, frames(sample / 2, 80))).toBe("steady");
-  });
-
-  test("does not change its mind once it has found a scene unsteady", () => {
+  test("stands for a scene found unsteady, however quickly it draws later", () => {
     const judge = judgeFrameRate();
     recordAll(judge, frames(warmUp + sample, 100));
 

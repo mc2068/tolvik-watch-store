@@ -152,13 +152,22 @@ test.describe("for a Shopper who prefers reduced motion", () => {
     "/collection/skifer",
     "/checkout",
     "/credits",
+    "/an-address-that-does-not-exist",
   ]) {
     test(`${path} is complete and still, and every heading on it can be reached`, async ({
       page,
     }) => {
+      // The checkout sends a Shopper with an empty cart to the Collection,
+      // so there is a Timepiece in it first.
+      if (path === "/checkout") {
+        await page.goto("/collection/skifer");
+        await addToCart(page).click();
+        await expect(cart(page)).toBeVisible();
+      }
       // Once the page has settled: the checkout learns from the browser
       // what is in the cart, and sets itself again.
       await page.goto(path, { waitUntil: "networkidle" });
+      await expect(page).toHaveURL(path);
 
       const headings = main(page).getByRole("heading");
       const count = await headings.count();

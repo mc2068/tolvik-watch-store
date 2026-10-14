@@ -1,7 +1,8 @@
 // Whether a device can hold a steady frame rate on a scene, judged from the
-// gaps between the frames it draws. A scene is first judged with every frame
-// asked for, behind its Still; found steady, it is shown and watched for as
-// long as it lives. A scene found unsteady is dropped for its Still.
+// gaps between the frames it draws. A scene is judged once, as it loads,
+// with every frame asked for, behind its Still: found steady it is shown,
+// and found unsteady it is dropped for its Still. Once shown, a scene draws
+// only when asked, so the gaps after that are its rests and say nothing.
 
 export const FRAME_RATE = {
   /** The first frames, while the scene is set up, which are not judged. */
@@ -10,12 +11,6 @@ export const FRAME_RATE = {
   sample: 40,
   /** The slowest a steady scene's frames come, in milliseconds: 20 a second. */
   slowest: 50,
-  /**
-   * The longest gap, in milliseconds, between two frames of a scene that is
-   * moving. Longer, the scene was resting: one that draws only when asked
-   * draws once a second, for the tick, and nothing at all off screen.
-   */
-  pause: 250,
 } as const;
 
 export type FrameRateVerdict = "judging" | "steady" | "unsteady";
@@ -28,19 +23,17 @@ export type FrameRateJudge = {
 };
 
 /**
- * A judge of one scene's frame rate. Steady means at least half of the last
- * sample of frames came no slower than `slowest`, so a few hiccups are
- * forgiven and a device that has slowed is not.
+ * A judge of one scene's frame rate. Steady means at least half of a sample
+ * of frames came no slower than `slowest`, so a few hiccups are forgiven.
+ * It gives up early on a device too slow to fill the sample in good time:
+ * once more than half of it has come too slowly, the verdict is already
+ * clear. A verdict, once given, stands.
  */
 export function judgeFrameRate(): FrameRateJudge {
   let verdict: FrameRateVerdict = "judging";
   let seen = 0;
-  // The most recent gaps judged, oldest first.
-  const recent: number[] = [];
-
-  const tooSlow = () =>
-    recent.filter((gap) => gap > FRAME_RATE.slowest).length >
-    FRAME_RATE.sample / 2;
+  let judged = 0;
+  let tooSlow = 0;
 
   return {
     get verdict() {
@@ -48,19 +41,15 @@ export function judgeFrameRate(): FrameRateJudge {
     },
 
     record(gap) {
-      if (verdict === "unsteady") return verdict;
+      if (verdict !== "judging") return verdict;
       seen += 1;
       if (seen <= FRAME_RATE.warmUp) return verdict;
-      // While the scene is first judged every frame is asked for, so a long
-      // gap is the device being slow. Once it is shown, it is the scene at
-      // rest.
-      if (verdict === "steady" && gap > FRAME_RATE.pause) return verdict;
 
-      recent.push(gap);
-      if (recent.length > FRAME_RATE.sample) recent.shift();
+      judged += 1;
+      if (gap > FRAME_RATE.slowest) tooSlow += 1;
 
-      if (tooSlow()) verdict = "unsteady";
-      else if (recent.length === FRAME_RATE.sample) verdict = "steady";
+      if (tooSlow > FRAME_RATE.sample / 2) verdict = "unsteady";
+      else if (judged === FRAME_RATE.sample) verdict = "steady";
       return verdict;
     },
   };

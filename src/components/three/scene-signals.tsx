@@ -28,12 +28,10 @@ export function LostContext({ onLost }: { onLost: () => void }) {
 }
 
 /**
- * Tells the section when the scene may be shown, and when the device cannot
+ * Tells the section when the scene may be shown, or when the device cannot
  * keep up with it. Until its frame rate has been judged the scene draws
- * every frame, unseen behind its Still; found steady it is shown, and still
- * watched for as long as it lives, so a device that slows later drops it
- * then. Put it beside the model, inside the Suspense that waits for it, so
- * the frames judged are the model's.
+ * every frame, unseen behind its Still. Put it beside the model, inside the
+ * Suspense that waits for it, so the frames judged are the model's.
  */
 export function SteadyFrames({
   onSteady,

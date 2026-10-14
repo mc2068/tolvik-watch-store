@@ -7,7 +7,11 @@ import {
   DIAL_WORDMARK_SIZE,
   drawDialWordmark,
 } from "@/components/three/dial-wordmark";
-import { HAND_CAP, HANDS } from "@/components/three/hero-model";
+import {
+  HAND_CAP,
+  HANDS,
+  type HERO_MODEL,
+} from "@/components/three/hero-model";
 import { createMaterials } from "@/components/three/materials";
 import { useClock } from "@/components/three/use-clock";
 import type { Finish } from "@/lib/catalogue";
@@ -21,8 +25,8 @@ export function HeroTimepiece({
   model,
   finish,
 }: {
-  /** Where the model is served from: one of `HERO_MODEL`'s two files. */
-  model: string;
+  /** Which of the two models: the lighter one on a phone. */
+  model: (typeof HERO_MODEL)[keyof typeof HERO_MODEL];
   finish: Finish;
 }) {
   // `useGLTF` downloads and decodes the model, and pauses this component
