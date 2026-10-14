@@ -2,14 +2,15 @@
 
 import dynamic from "next/dynamic";
 import { getImageProps } from "next/image";
-import {
-  Component,
-  type ReactNode,
-  useState,
-  useSyncExternalStore,
-} from "react";
+import { useState, useSyncExternalStore } from "react";
 
 import { HERO_OPENING_STILL } from "@/components/three/hero-model";
+import {
+  MOTION_WELCOME,
+  SceneBoundary,
+  useCanDraw3D,
+  useMotionWelcome,
+} from "@/components/ui/live-3d";
 import { actProgress } from "@/lib/act-progress";
 import type { Finish, Still } from "@/lib/catalogue";
 
@@ -19,28 +20,6 @@ import type { Finish, Still } from "@/lib/catalogue";
 const HeroScene = dynamic(() => import("@/components/three/HeroScene"), {
   ssr: false,
 });
-
-const MOTION_WELCOME = "(prefers-reduced-motion: no-preference)";
-
-let canDraw: boolean | undefined;
-
-/** Whether this browser can draw 3D at all. Asked once, in the browser. */
-function browserCanDraw3D(): boolean {
-  if (canDraw === undefined) {
-    const context = document.createElement("canvas").getContext("webgl2");
-    canDraw = context !== null;
-    context?.getExtension("WEBGL_lose_context")?.loseContext();
-  }
-  return canDraw;
-}
-
-const subscribeToNothing = () => () => {};
-
-function subscribeToMotionPreference(onChange: () => void) {
-  const preference = window.matchMedia(MOTION_WELCOME);
-  preference.addEventListener("change", onChange);
-  return () => preference.removeEventListener("change", onChange);
-}
 
 /**
  * A Timepiece in real-time 3D, filling the box it is put in: Home's Stage,
@@ -67,19 +46,10 @@ export function LiveTimepiece({
   /** Where in the box the line under the watch stands. */
   statusClassName: string;
 }) {
-  // `useSyncExternalStore` reads something that lives outside React. Its
-  // third argument is the answer on the server and while the page hydrates,
-  // where neither question can be asked yet: null, not known.
-  const supported = useSyncExternalStore(
-    subscribeToNothing,
-    browserCanDraw3D,
-    () => null,
-  );
-  const motionWelcome = useSyncExternalStore(
-    subscribeToMotionPreference,
-    () => window.matchMedia(MOTION_WELCOME).matches,
-    () => null,
-  );
+  // Each is null on the server and while the page hydrates, where neither
+  // question can be asked yet.
+  const supported = useCanDraw3D();
+  const motionWelcome = useMotionWelcome();
   const [drawn, setDrawn] = useState(false);
   const [failed, setFailed] = useState(false);
   // Whether the watch has begun to turn away. The act's progress changes on
@@ -208,26 +178,4 @@ function HeroStill({
       />
     </picture>
   );
-}
-
-type SceneBoundaryProps = { onError: () => void; children: ReactNode };
-
-/**
- * An error boundary: React's way to catch a component that throws while
- * rendering. If the scene fails, it is dropped and the Still stays.
- */
-class SceneBoundary extends Component<SceneBoundaryProps, { failed: boolean }> {
-  state = { failed: false };
-
-  static getDerivedStateFromError() {
-    return { failed: true };
-  }
-
-  componentDidCatch() {
-    this.props.onError();
-  }
-
-  render() {
-    return this.state.failed ? null : this.props.children;
-  }
 }

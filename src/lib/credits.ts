@@ -22,6 +22,22 @@ export const heroModelCredit: ModelCredit = {
   licenceUrl: "http://creativecommons.org/licenses/by/4.0/",
 };
 
+export const escapementModelCredit: ModelCredit = {
+  title: "Swiss lever escapement mechanism",
+  source:
+    "https://sketchfab.com/3d-models/swiss-lever-escapement-mechanism-96cf82a6bdcd4ddda7635fbd33d0e016",
+  author: "C. Yamahata",
+  authorUrl: "https://sketchfab.com/cyamahat",
+  licence: "CC-BY-4.0",
+  licenceUrl: "http://creativecommons.org/licenses/by/4.0/",
+};
+
+/** Every model the site ships, in the order the credits page lists them. */
+export const modelCredits: readonly ModelCredit[] = [
+  heroModelCredit,
+  escapementModelCredit,
+];
+
 /** The credit sentence in the wording the model's `license.txt` asks for. */
 export function creditLine(credit: ModelCredit): string {
   return `This work is based on "${credit.title}" (${credit.source}) by ${credit.author} (${credit.authorUrl}) licensed under ${credit.licence} (${credit.licenceUrl})`;

@@ -1,3 +1,4 @@
+import { Close } from "@/components/home/Close";
 import { CollectionSection } from "@/components/home/CollectionSection";
 import { Craftsmanship } from "@/components/home/Craftsmanship";
 import { HeroActs } from "@/components/home/HeroActs";
@@ -11,6 +12,7 @@ export default async function Home() {
       <HeroActs timepiece={heroTimepiece} />
       <CollectionSection />
       <Craftsmanship />
+      <Close />
     </main>
   );
 }

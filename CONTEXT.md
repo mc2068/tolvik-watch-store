@@ -70,6 +70,10 @@ _Avoid_: Transform, state, keyframe
 What keeps the Hero Timepiece's hands on the Shopper's own local time, ticking once a second.
 _Avoid_: Timer, ticker
 
+**Escapement**:
+The part of a mechanical watch that lets its spring's energy out one beat at a time, shown at work in real-time 3D in Home's craftsmanship section. It is a model of its own, not something inside the Hero Timepiece, which has no movement.
+_Avoid_: Movement, mechanism, engine
+
 **Demo Checkout**:
 A checkout that collects no payment and ends in a simulated order confirmation.
 _Avoid_: Fake checkout, mock payment, test checkout

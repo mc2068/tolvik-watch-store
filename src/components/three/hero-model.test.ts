@@ -11,6 +11,7 @@ import { getBounds } from "@gltf-transform/functions";
 import { MeshoptDecoder } from "meshoptimizer";
 import { beforeAll, describe, expect, test } from "vitest";
 
+import { ESCAPEMENT_MODEL } from "@/components/three/escapement-model";
 import {
   HAND_CAP,
   HANDS,
@@ -148,10 +149,10 @@ test("the phone model is lighter than the main one", () => {
   );
 });
 
-test("only the Hero Timepiece's two files ship as models", () => {
+test("only the Hero Timepiece's two files and the escapement ship as models", () => {
   const shipped = readdirSync(path.join(publicDir, "models")).sort();
   expect(shipped).toEqual(
-    Object.values(HERO_MODEL)
+    [...Object.values(HERO_MODEL), ESCAPEMENT_MODEL]
       .map((url) => path.basename(url))
       .sort(),
   );
